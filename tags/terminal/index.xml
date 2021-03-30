@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>terminal on feileo</title>
+    <link>https://at7h.com/tags/terminal/</link>
+    <description>Recent content in terminal on feileo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sun, 26 Jul 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://at7h.com/tags/terminal/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>武器修炼之 Neo/vim 与 Tmux</title>
+      <link>https://at7h.com/posts/my-dotfiles/</link>
+      <pubDate>Sun, 26 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/my-dotfiles/</guid>
+      <description>古人云：工欲善其事，必先利其器。 一直以来，我都觉得应该好好修炼一个自己趁手的『武器』，这篇文章跟大家谈一谈我的一点点修炼感受。 你可以选择修炼 vim、emacs 等编辑器，如果你不喜欢折腾也可以直接使用 IDE。这个话题貌似比较敏感，很多人都在讨论，我个人感觉完全是个人审美或是爱好而已，说到底『武器』只是辅助工具，只要用的顺手，能很好够满足自己的功能、审美等需求即可，最重要的还是自己本身的『武功』，如果你『武功』足够高，不需要借助工具帮助提高效率，不要补全不要 lint 这那的，用『记事本』也不耽误你写出牛逼的代码。 我的选择是做个 vimer。修炼路且长，下面来谈一下我自己的一点入坑感受和建议，希望可以帮助那些还在迷茫的想要入门的童鞋。老鸟就跳过吧，感兴趣的话可以关注下我的配置，提提建议、意见，交流交流，共同进步。 入坑建议 作为一个爱『折腾』的人，学生时代也用过一些主流的 IDE，最后弃用的原因就是觉得太重了，太多的功能用不上，更不想那么多这那的窗口挡住我的代码 😂。在用了一段时间 sublime 之后，最终决定开始入坑 vim，后来因为异步、floating window 等切到了 neovim，当然这些现在 vim 也都支持了，再后来接触到 tmux，就圆满了 😎。 Tmux 是一款优秀的终端复用软件，由于很长一段时间我的开发都是登录远程主机上进行的，这时候 tmux 神器简直就让你爽到起飞。本地开发的话，多个项目终端之间切换，也是非常有用。跟 vim 类似，刚开始也是有一定的上手使用和配置难度，中间放弃了一次，但是入坑之后，就就就就，爽的飞起~ 作为一个流行了三十多年的非常优秀的编辑器，我是非常喜欢它的设计哲学的，说的直白一点就是它的工作模式吧。还有一个很重要的方面就是，每一次你在折腾配置折腾插件的时候，它总是时不时的能给你带来惊喜，也许很小的一点改动却可以大幅提高你使用的『幸福度』。 很多人觉得它的上手难度比较大，学习曲线有些陡峭，看别人用的很溜，自己上手就不知所措，那么多快捷键、命令怎么记得住，配置好难搞哦等等，慢慢就弃坑了。 个人觉得是这样，刚开始的时候你得想清楚你学它的目的，是真正的喜欢想修炼自己的『武器』？还是就是看人家用好溜，也想学上一手装个 B 呢？一直在说，工具只是工具，辅助你高效率的写代码而已，如果你自身『武功』足够高，用『记事本』也不耽误你写出牛逼的代码，要毛补全要毛 Lint。就是说，首先你得搞清楚了是为了什么，IDE 好好的为啥非要辛苦折腾这样那样配置呢，得明白你是为了满足什么需求解决什么问题。 Sorry，貌似跑题了。回到正题，刚开始没办法，就是硬着头皮上，上手用，刚开始你可能，哦不对，是肯定是觉得真难用，是的，没有任何配置的情况下确实不怎么好用，所以你就要想办法让它『好用起来』。对于配置，我是建议自己慢慢来『攒』你的自己配置，一行一行自己来搞，这个配置是干嘛的这个插件是干嘛的，搞清楚，一点一点来，积累形成一套适合自己的风格。可以并且鼓励去参考一些别人的优秀的配置、解决方案，但是要弄懂，不要一把梭照搬过来。 当然现在有很多很成熟的产品级的解决方案比如 spaceVim，你可以直接拿来根据教程快速的上手用起来，但刚开始它对你就像是个黑盒子，哪里出了问题，或者你想修改点东西都可能无从下手。 Vim 里面的东西还是比较复杂的，个人觉得你是日常使用的话，肯定是比较注重实际的使用，没必要一开始就像学习一门课程一样系统的学，今天学完明天也许就忘了，更没必要去记那些这样那样的命令、快捷键。就直接上手干就完了（当然也不是说一点也不看教程，最开始肯定还是要先看一些简单的入门帖子，必备技能还是要学一下子的，不然刚开始就没法玩儿），遇到不会搞的就查，查文档，问搜索引擎，用的多了自然就会了，按的多了自然就记住了，长期的肌肉记忆根本就不需要过脑子想这个怎么按，时间长了，你遇到的问题、需求多了，自然就入门了。对插件也是一样，不要一开始就去完全照搬别人的配置，一大堆插件一把梭都装上，也不知道一个个是干嘛的，最好还是根据自己的需要一个一个来，好好看下每个插件仓库的文档，看下怎么使用。 Tmux 也是一样，可以额先看下基础的一些帖子或者官方文档，然后主要是上手用，就干就完了。配置也一样，也是建议自己搞，不要一开始全部照搬，每个人习惯不一样，别人喜欢的未必就是你喜欢的，『拿来』可以，但是前提是你要能吸收理解，能驾驭。 1. Neo/vim 下查看文档可以输入 : 进入 COMMAND 模式 help，这里的文档也就是它的官方文档，这里是翻译中文文档。 2. Tmux 可以看官方仓库的 Getting-Started，像我这种英文不怎么能看明白的还是要再去搜一些相关的介绍文章看看。 不要放弃，硬着头发干，等真正用起来之后，相信我，你肯定会爱上它们的 😏 😏 ~ 我的分享 最后，分享下我的配置： https://github.com/at7h/dots 对你有用的话，请帮忙点个 Star，感谢 😊 当然，也十分欢迎大家来交流自己的想法、心得、配置 …… 大家有问题欢迎评论留言，我会第一时间回复。</description>
+    </item>
+    
+    <item>
+      <title>在 tmux 环境中使用 tmux-256color</title>
+      <link>https://at7h.com/posts/install-tmux256-formac/</link>
+      <pubDate>Mon, 11 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/install-tmux256-formac/</guid>
+      <description>在 macOS 中，我们 iTerm2 中的 terminal color 一般都设置为 xterm-256color，这没毛病，但问题是它不能在 tmux 环境中使用: $TERM should be &amp;quot;screen-256color&amp;quot; or &amp;quot;tmux-256color&amp;quot; in tmux. Colors might look wrong. 为此，我们可以在 zshrc 中加上这样一段配置： if [[ $TMUX != &amp;#34;&amp;#34; ]] then export TERM=&amp;#34;tmux-256color&amp;#34; else export TERM=&amp;#34;xterm-256color&amp;#34; fi 而在 tmux 环境中一般默认使用系统自带的 screen-256color，这在大多数情况是够用的，但是它不支持任何斜体字体样式，所以在 Vim 中类似代码高亮这种就会很有问题。 为此，我们可以在 tmux.conf 中加上设置： set -g default-terminal &amp;#34;tmux-256color&amp;#34; set-option -a terminal-overrides &amp;#34;,*256col*:RGB&amp;#34; 新建一个 session 测试一下： tnew test # tmux new -s test 发现报错: can&#39;t find terminal definition for tmux-256color。 原因是系统默认是没有 tmux-256color 的，需要我们手动安装，加上相应的 terminfo 就可以了。 tmux-256color 详细安装教程：Installing tmux-256color for macOS 感兴趣的同学可以参考我的配置，欢迎大家评论留言，与我交流。</description>
+    </item>
+    
+  </channel>
+</rss>

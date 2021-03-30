@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="baidu-site-verification" content="0iFDP8mhHL" />
+	<title>
+		
+			
+				GC 机制探究之 Python 篇 -
+			
+			feileo
+		 的博客
+	</title>
+	<script>
+		(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");
+	</script>
+	<meta name="description" content="本文主要讨论垃圾回收（Garbage Collection）机制在 Python 3.7 中是如何工作的。不同的 Python 解释器有各自 GC 的实现方式，比如 Jython 跑在 JVM 上，采用了标准的 Java GC，Pypy 的 GC 使用了标记-清除(Mark and Sweep)算法，它比 CPython 的更加复杂并且有着一些额外的优化 ...">
+	
+		<meta property="og:title" content="GC 机制探究之 Python 篇" />
+<meta property="og:description" content="本文主要讨论垃圾回收（Garbage Collection）机制在 Python 3.7 中是如何工作的。不同的 Python 解释器有各自 GC 的实现方式，比如 Jython 跑在 JVM 上，采用了标准的 Java GC，Pypy 的 GC 使用了标记-清除(Mark and Sweep)算法，它比 CPython 的更加复杂并且有着一些额外的优化 ..." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://at7h.com/posts/gc-in-py/" />
+<meta property="article:published_time" content="2020-09-08T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-09-08T00:00:00+00:00" />
+
+	
+	
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	
+	<link rel="shortcut icon" href="/img/favicon.ico">
+	
+		
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-155215466-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+	<link rel="stylesheet" href="/highlight/styles/atom-one-dark.css">
+
+	<script src="/js/jquery.min.js"></script>
+	<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+	<script src="/highlight/highlight.pack.js" type='text/javascript'></script>
+	
+	<script type="text/javascript">
+	$(document).ready(function(){
+    hljs.initHighlightingOnLoad();
+		
+	});
+
+	(function(){
+		var bp = document.createElement('script');
+		var curProtocol = window.location.protocol.split(':')[0];
+		if (curProtocol === 'https') {
+			bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+		}
+		else {
+			bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+		}
+		var s = document.getElementsByTagName("script")[0];
+		s.parentNode.insertBefore(bp, s);
+  	})();
+	</script>
+</head>
+
+<body class="body">
+	<div class="container container--outer">
+		<header class="header">
+    <div class="container">
+        <div class="logo">
+            <a class="logo__link" href="/" title="feileo" rel="home">
+              <div class="logo__title">
+								feileo  
+							</div>
+							
+							<div class="logo__tagline">关注互联网开发技术，记录、总结与分享 👣</div>
+							
+						</a>
+						
+        </div>
+        
+
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1"><svg t="1571404030009" class="meta__icon icon icon-list" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1829" width="20" height="20"><path d="M892.928 128q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 448.512q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 769.024q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0z" p-id="1830" fill="#1e90ff"></path></svg></span>
+	</button>
+	<mul class="menu__list">
+		
+		<li class="menu__item">
+			<a class="menu__link__home" href="/"><svg t="1571149675735" class="meta__icon icon icon-home" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3856" width="22" height="22"><path d="M230.4 992c-64 0-115.2-51.2-115.2-115.2L115.2 544 76.8 582.4C70.4 588.8 57.6 595.2 44.8 595.2c-12.8 0-25.6-6.4-32-12.8C6.4 569.6 0 556.8 0 544 0 537.6 6.4 524.8 12.8 512l467.2-467.2C486.4 38.4 499.2 32 512 32s25.6 6.4 32 12.8L1011.2 512C1017.6 524.8 1024 537.6 1024 544c0 12.8-6.4 25.6-12.8 32-6.4 6.4-19.2 12.8-32 12.8s-25.6-6.4-32-12.8L512 147.2 211.2 448l0 422.4c0 12.8 12.8 25.6 25.6 25.6l115.2 0 0-185.6c0-25.6 19.2-44.8 44.8-44.8l230.4 0c25.6 0 44.8 19.2 44.8 44.8s-19.2 44.8-44.8 44.8L441.6 755.2l0 185.6c0 25.6-19.2 44.8-44.8 44.8L230.4 985.6zM627.2 992c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8l160 0c12.8 0 25.6-12.8 25.6-25.6l0-256c0-25.6 19.2-44.8 44.8-44.8 25.6 0 44.8 19.2 44.8 44.8l0 256c0 64-51.2 115.2-115.2 115.2L627.2 992z" p-id="3857" fill="#ffffff"></path></svg></a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/python">Python</a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/golang">Golang</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/vim">Vim</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link" href="/categories/tool">效率工具</a>
+			
+		</li>
+		
+		
+		
+		
+		
+	</mul>
+</nav>
+
+    </div>
+</header>
+
+
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<div class="post__title">GC 机制探究之 Python 篇</div>
+			<div class="post__meta meta">
+					
+<div class="meta__item-categories meta__item">
+	<svg t="1571148699121" class="meta__icon icon icon-category" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5705" width="16" height="16"><path d="M853.333333 938.666667 42.666667 938.666667c-25.6 0-42.666667-17.066667-42.666667-42.666667L0 128c0-25.6 17.066667-42.666667 42.666667-42.666667l298.666667 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 42.666667 469.333333 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 170.666667c0 25.6-17.066667 42.666667-42.666667 42.666667s-42.666667-17.066667-42.666667-42.666667L810.666667 256 341.333333 256C315.733333 256 298.666667 238.933333 298.666667 213.333333L298.666667 170.666667 85.333333 170.666667l0 682.666667 768 0c25.6 0 42.666667 17.066667 42.666667 42.666667S878.933333 938.666667 853.333333 938.666667z" p-id="5706" fill="#515151"></path><path d="M853.333333 938.666667 42.666667 938.666667c-12.8 0-25.6-4.266667-34.133333-17.066667S0 900.266667 0 887.466667l128-512C132.266667 354.133333 149.333333 341.333333 170.666667 341.333333l810.666667 0c12.8 0 25.6 4.266667 34.133333 17.066667S1024 379.733333 1024 392.533333l-128 512C891.733333 925.866667 874.666667 938.666667 853.333333 938.666667zM98.133333 853.333333l721.066667 0 106.666667-426.666667L204.8 426.666667 98.133333 853.333333z" p-id="5707" fill="#515151"></path></svg>
+	<span class="meta__text">
+		
+		<a class="meta__link" href="/categories/python" rel="category">
+			
+			Python
+			
+		</a>
+		
+	</span>
+</div>
+
+<div class="meta__item-datetime meta__item">
+	<svg t="1571148896140" class="meta__icon icon icon-date" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8190" width="16" height="16"><path d="M883.278513 148.539035l-43.016723 0 0-12.780071c0-38.310537-31.199583-69.632917-69.323878-69.632917l-1.02433 0c-38.129412 0-69.323878 31.321356-69.323878 69.632917l0 12.780071L317.20292 148.539035l0-12.780071c0-38.310537-31.195489-69.632917-69.323878-69.632917l-1.055029 0c-38.127366 0-69.322855 31.321356-69.322855 69.632917l0 12.780071-42.924625 0c-38.127366 0-69.323878 31.351032-69.323878 69.609381l0 665.701614c0 38.309514 31.195489 69.632917 69.323878 69.632917l748.70198 0c38.127366 0 69.322855-31.323403 69.322855-69.632917l0-665.701614C952.601368 179.890067 921.405879 148.539035 883.278513 148.539035L883.278513 148.539035zM728.318232 135.758963c0-23.024389 18.632359-41.777499 41.594327-41.777499l1.02433 0c22.931269 0 41.593304 18.753109 41.593304 41.777499L812.530193 259.615852c0 23.024389-18.662035 41.778522-41.593304 41.778522l-1.02433 0c-22.961968 0-41.594327-18.754133-41.594327-41.778522L728.318232 135.758963 728.318232 135.758963zM205.23071 135.758963c0-23.024389 18.632359-41.777499 41.599444-41.777499l1.048889 0c22.903639 0 41.594327 18.753109 41.594327 41.777499L289.473369 259.615852c0 23.024389-18.691711 41.778522-41.594327 41.778522l-1.048889 0c-22.967084 0-41.599444-18.754133-41.599444-41.778522L205.23071 135.758963 205.23071 135.758963zM883.278513 897.807926l-748.70198 0c-7.519254 0-13.864776-6.468318-13.864776-13.957897L120.711757 394.394489l776.433578 0 0 489.455541C897.144312 891.338584 890.797767 897.807926 883.278513 897.807926L883.278513 897.807926zM222.614635 494.083955l127.918391 0 0 62.950727L222.614635 557.034682 222.614635 494.083955 222.614635 494.083955zM445.963493 494.083955l126.906342 0 0 62.950727L445.963493 557.034682 445.963493 494.083955 445.963493 494.083955zM668.299277 494.083955l124.873032 0 0 62.950727L668.299277 557.034682 668.299277 494.083955 668.299277 494.083955zM222.614635 622.00951l127.918391 0 0 61.927421L222.614635 683.936931 222.614635 622.00951 222.614635 622.00951zM445.963493 622.00951l126.906342 0 0 61.927421L445.963493 683.936931 445.963493 622.00951 445.963493 622.00951zM668.299277 622.00951l124.873032 0 0 61.927421L668.299277 683.936931 668.299277 622.00951 668.299277 622.00951zM222.614635 746.884588l127.918391 0 0 64.97278L222.614635 811.857369 222.614635 746.884588 222.614635 746.884588zM445.963493 746.884588l126.906342 0 0 64.97278L445.963493 811.857369 445.963493 746.884588 445.963493 746.884588zM668.299277 746.884588l124.873032 0 0 64.97278L668.299277 811.857369 668.299277 746.884588 668.299277 746.884588zM668.299277 746.884588" p-id="8191" fill="#515151"></path></svg>
+	更新于 <time class="meta__text" datetime="2020-09-08T00:00:00">2020-09-08</time>
+</div>
+
+<div class="meta__item-word_count meta__item">
+	<svg t="1571149110363" class="meta__icon icon icon-wordcount" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1792" width="16" height="16"><path d="M286.722048 405.987328l0 477.058048-132.51584 0L154.206208 405.987328 286.722048 405.987328M313.22624 352.980992 127.70304 352.980992c-14.636032 0-26.503168 11.867136-26.503168 26.503168L101.199872 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.5232 0c14.636032 0 26.503168-11.867136 26.503168-26.503168L339.729408 379.483136C339.729408 364.847104 327.862272 352.980992 313.22624 352.980992L313.22624 352.980992zM577.998848 563.557376l0 319.488L445.476864 883.045376l0-319.488L577.998848 563.557376M604.502016 510.543872l-185.52832 0c-14.636032 0-26.503168 11.859968-26.503168 26.510336L392.470528 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.52832 0c14.623744 0 26.504192-11.867136 26.504192-26.503168L631.006208 537.054208c0-14.623744-11.880448-26.497024-26.504192-26.497024l0 0L604.502016 510.543872zM869.792768 140.954624l0 742.090752L737.5104 883.045376l0-742.090752L869.792768 140.954624M896.29696 87.948288 711.007232 87.948288c-14.649344 0-26.503168 11.867136-26.503168 26.503168L684.504064 909.54752c0 14.636032 11.853824 26.503168 26.503168 26.503168L896.29696 936.050688c14.636032 0 26.503168-11.867136 26.503168-26.503168l0-795.096064C922.800128 99.815424 910.932992 87.948288 896.29696 87.948288L896.29696 87.948288z" p-id="1793" fill="#515151"></path></svg>
+    约 <span class="meta__text">5156</span> 个字
+</div>
+
+<div class="meta__item-reading_time meta__item">
+	<svg t="1571149199980" class="meta__icon icon icon-time" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2748" width="16" height="16"><path d="M512 64C264.96 64 64 264.96 64 512s200.96 448 448 448 448-200.96 448-448S759.04 64 512 64zM512 895.712c-211.584 0-383.712-172.16-383.712-383.712C128.288 300.416 300.416 128.288 512 128.288c211.552 0 383.712 172.128 383.712 383.712C895.712 723.552 723.552 895.712 512 895.712z" p-id="2749" fill="#515151"></path><path d="M671.968 512 512 512 512 288.064c0-17.76-14.24-32.128-32-32.128s-32 14.4-32 32.128L448 544c0 17.76 14.272 32 32 32l191.968 0c17.76 0 32.128-14.24 32.128-32S689.728 512 671.968 512z" p-id="2750" fill="#515151"></path></svg>    
+    阅读约需 <span class="meta__text">
+        
+            11
+         m</span>
+</div>
+
+						<div class="meta__item-page_pv meta__item">
+    
+    <span class="meta__text">
+        <span id="busuanzi_container_page_pv">
+            
+        </span>
+    </span>
+</div>
+				</div>
+		</header>
+		<div class="content post__content clearfix">
+			<p>本文主要讨论垃圾回收（Garbage Collection）机制在 Python 3.7 中是如何工作的。</p>
+<blockquote>
+<p>不同的 Python 解释器有各自 GC 的实现方式，比如 Jython 跑在 JVM 上，采用了标准的 Java GC，Pypy 的 GC 使用了标记-清除(Mark and Sweep)算法，它比 CPython 的更加复杂并且有着一些额外的优化。
+<strong>本文讨论主流的 CPython 解释器</strong>。</p>
+</blockquote>
+<p>通常，你在使用一些高级语言（Python、Golang、Java 等）编写代码的时候，一般无需关心内存管理的问题，当对象不再需要的时候，GC 会自动的把它们回收。但是了解 GC 的工作原理可以帮助你编写更好、更快的程序，帮助你排查一些复杂的内存问题。</p>
+<h1 id="常见-gc-算法">常见 GC 算法</h1>
+<p>业界常见的比较知名的垃圾回收算法有：</p>
+<p><strong>1.</strong> <strong>引用计数(Reference counting)</strong>：对每个对象维护一个引用计数，当引用计数器为零时回收该对象。代表语言如 Python。</p>
+<ul>
+<li>优点：简单有效，对象可以被很快回收，不会出现内存耗尽或达到某个阀值时才回收。</li>
+<li>缺点：很明显，对每个对象维护引用计数有一定代价，而且致命的是无法处理循环引用的问题。</li>
+</ul>
+<p><strong>2.</strong> <strong>标记-清除(Mark and Sweep)</strong>：为解决循环引用问题而提出，算法从<strong>根对象</strong>开始遍历程序所有对象的引用，可达的对象被标记，最终没被标记的对象被删除回收。代表语言如 Golang(三色标记)。</p>
+<ul>
+<li>优点：解决循环引用的问题，并且在算法执行期间不会产生额外的开销。</li>
+<li>缺点：需要 STW(stop the world)，即执行期间需要程序暂停，并且容易在经过多次『标记-清除』循环后导致内存碎片化。</li>
+</ul>
+<p><strong>3.</strong> <strong>停止-复制(Stop-and-Copy)</strong> ：与标记-清除算法类似，差异在于如何处理这些可达的存活对象。该算法将整个堆空间被切分活动区和空闲区，垃圾收集时将所有的可达的存活对象复制到另一区，原本半区的就可以被回收，程序会在新的活动区中分配内存。</p>
+<ul>
+<li>优点：运行高效且不容易产生内存碎片，基本解决了标记-清除内存碎片化的问题。</li>
+<li>缺点：需要 STW，收集器必须复制所有的活动对象，这增加了程序等待时间，并且在同一时间内只能使用整个内存空间的一半。</li>
+</ul>
+<p><strong>3.</strong> <strong>标记-压缩(Mark-and-Compact)</strong> ：标记阶段与标记-清除算法相同，压缩（整理）阶段不是直接清理，而是让所有的对象都向一端移动，按顺序排放更新对应的指针，然后清理掉端边界以外的内存。</p>
+<ul>
+<li>优点：避免了标记-清除的碎片化问题，同时也避免了停止复制算法的内存空间减半问题。</li>
+<li>缺点：需要 STW，低效，因为增加了 copy 和更新指针的过程。</li>
+</ul>
+<p><strong>5.</strong> <strong>分代收集(Generational Collection)</strong>：与其说是一种新算法不如说是一种优化策略，目前很流行。算法按照对象生命周期长短划分不同的代空间，生命周期长的放入老年代，短的放入新生代，从而区别不同的回收算法策略和频率，让各算法充分发挥优势。代表语言如 Java。</p>
+<ul>
+<li>优点：可结合其他检测算法，回收性能好。</li>
+<li>缺点：算法比较复杂。</li>
+</ul>
+<p>没有绝对好和坏的解决方案，在真正语言实现中一般都是几种算法结合使用，下面主要来探讨 Python 中的垃圾回收策略。</p>
+<h1 id="gc-in-python">GC in Python</h1>
+<p>在 Python 中，一切皆对象，知道它们什么时候被分配内存很容易，当你需要的时候你可以很容易创建一个新的对象。但回收确是比较复杂的一件事，需要确定你的对象确实是不再需要了，过早的清理可能会导致程序崩溃，如果不予以释放，则会造成内存泄露。</p>
+<p>垃圾回收的主要任务就是确定哪些对象可以被收回，并选择一个最佳的时间来释放它们占用的内存。标准的 CPython GC 有两个组件：</p>
+<ul>
+<li><strong>引用计数收集器(reference counting collector)</strong>：主要的、基础模块、不可控，不能禁用。</li>
+<li><strong>分代垃圾收集器(generational garbage collector)</strong>：辅助的、可以控制，即 <a href="https://docs.python.org/3.6/library/gc.html">gc module</a>。</li>
+</ul>
+<p>CPython 的垃圾回收主要是通过引用计数技术，引用计数是非常有效和简单的，但它不能检测<strong>循环引用(reference cycles)</strong>，因此 CPython 又设计了一个分代垃圾收集器作为补充算法来专门处理循环引用的问题.因它只处理循环引用，也被称为分代循环(generational cyclic) GC。Python 中常说的 GC 其实就是它，其默认情况下是启用的，你可以手动触发和禁用它。</p>
+<p>CPython GC 的策略是：</p>
+<ol>
+<li>对每个对象维护引用计数</li>
+<li>通过一个辅助算法来定期检测循环引用，释放无用对象</li>
+<li>引入分代策略来优化此检测，提高性能</li>
+</ol>
+<h2 id="引用计数">引用计数</h2>
+<p>引用计数是一种简单的技术，当程序中没有对该对象的引用时，将其释放。</p>
+<p>Python 中的每个变量都是对真实对象的引用（指针），为了跟踪引用，每个对象（包括整数、字符串）都会有一个引用计数的额外字段，该字段会一直维护，在创建或删除指向该对象的引用时会增加或减少。有关详细说明，可以参见 <a href="https://docs.python.org/3.7/c-api/intro.html#objects-types-and-reference-counts">Objects, Types and Reference Counts</a> 部分。</p>
+<p>导致引用计数增加主要有：</p>
+<ul>
+<li>赋值运算符</li>
+<li>参数传递</li>
+<li>将对象（作为元素）append 到容器中</li>
+</ul>
+<p>如果对象的引用计数达到零，CPython 会自动调用对象特定的内存释放函数。如果一个对象包含对其他对象的引用，则它们的引用计数也会自动减少，因此，可以依次释放其他对象。例如，当删除 List 时，所有 List 元素的引用计数都会减少。如果存在另一个变量引用了 List 中的某个项目，则该元素不会被释放。</p>
+<p>在 Python 中，全局变量会一直存在直到 Python 进程结束为止。因此，由全局变量引用的对象的引用计数永远不会降为零，所有全局变量都存储在字典中，你可以通过调用 <code>globals()</code> 函数来获取它们。</p>
+<p>在某一个『块』中定义的局部变量，如 <code>function</code>、<code>class</code> 或 <code>with</code>（context&rsquo;s <code>enter/exit</code>) 语句具有局部作用域，当解释器从该块中退出时，会释放在该块内部创建的局部变量及其引用。在 Python 中，用的最多的『块』应该就是函数（方法）了，这是大多数垃圾收集发生的地方，同时这也是保持函数功能单一一个原因吧。</p>
+<p>在 Python 中，你始终可以使用 <code>sys.getrefcount</code> 函数检查对象引用的数量。来看一个简单的示例：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">In [<span style="color:#2aa198">1</span>]: <span style="color:#719e07">import</span> sys
+
+In [<span style="color:#2aa198">2</span>]: sys<span style="color:#719e07">.</span>getrefcount?
+Docstring:
+getrefcount(<span style="color:#b58900">object</span>) <span style="color:#719e07">-&gt;</span> integer
+
+Return the reference count of <span style="color:#b58900">object</span><span style="color:#719e07">.</span>  The count returned <span style="color:#719e07">is</span> generally
+one higher than you might expect, because it includes the (temporary)
+reference <span style="color:#719e07">as</span> an argument to getrefcount()<span style="color:#719e07">.</span>
+Type:      builtin_function_or_method
+
+In [<span style="color:#2aa198">3</span>]: l <span style="color:#719e07">=</span> []
+
+In [<span style="color:#2aa198">4</span>]: sys<span style="color:#719e07">.</span>getrefcount(l)
+Out[<span style="color:#2aa198">4</span>]: <span style="color:#2aa198">2</span> <span style="color:#586e75"># 变量 l 和 getrefcount 中的临时变量</span>
+
+In [<span style="color:#2aa198">5</span>]: <span style="color:#719e07">def</span> <span style="color:#268bd2">f</span>(a):
+   <span style="color:#719e07">...</span>:     <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#34;Here reference count is:&#34;</span>, sys<span style="color:#719e07">.</span>getrefcount(a))
+   <span style="color:#719e07">...</span>:
+
+In [<span style="color:#2aa198">6</span>]: f(l)
+Here reference count <span style="color:#719e07">is</span>: <span style="color:#2aa198">4</span>
+
+In [<span style="color:#2aa198">7</span>]: sys<span style="color:#719e07">.</span>getrefcount(l) 
+Out[<span style="color:#2aa198">7</span>]: <span style="color:#2aa198">2</span> <span style="color:#586e75"># 函数作用域的被销毁</span>
+</code></pre></div><p>有时我们需要刻意的手动删除某一变量，可以使用 <code>del</code> 语句（其删除变量及其引用，而不是对象本身），这在 REPL 环境（Jupyter notebooks，IPython 等）工作时通常很有用，因为所有变量都是全局范围的。</p>
+<p>个人觉得，CPython 使用引用计数主要是历史原因，关于这种技术的弱点很多争论。很多人觉得现代垃圾收集算法可以更高效，无需引用计数，引用计数算法有很多问题，例如<a href="#%E5%BE%AA%E7%8E%AF%E5%BC%95%E7%94%A8">循环引用</a>，线程锁定以及内存和性能的额外开销。</p>
+<p>引用计数应该也是 CPython 无法摆脱 <a href="https://wiki.python.org/moin/GlobalInterpreterLock">GIL</a> 的原因之一。</p>
+<h2 id="循环引用">循环引用</h2>
+<p>以下情况会产生循环引用：</p>
+<ol>
+<li>对象包含本身的引用</li>
+<li>两个对象之间相互引用</li>
+</ol>
+<p>为了证明这一点，我们使用 <code>ctypes</code> 模块来跟踪访问对象的内存地址，以展示上面两种情况：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">In [<span style="color:#2aa198">1</span>]: <span style="color:#719e07">import</span> gc<span style="color:#719e07">,</span> ctypes
+
+In [<span style="color:#2aa198">2</span>]: gc<span style="color:#719e07">.</span>disable()
+
+In [<span style="color:#2aa198">3</span>]: <span style="color:#719e07">class</span> <span style="color:#268bd2">Object</span>(ctypes<span style="color:#719e07">.</span>Structure):
+   <span style="color:#719e07">...</span>:     _fields_ <span style="color:#719e07">=</span> [(<span style="color:#2aa198">&#34;refcnt&#34;</span>, ctypes<span style="color:#719e07">.</span>c_long)]
+
+In [<span style="color:#2aa198">4</span>]: l <span style="color:#719e07">=</span> []
+   <span style="color:#719e07">...</span>: l<span style="color:#719e07">.</span>append(l)
+
+In [<span style="color:#2aa198">5</span>]: lst_address <span style="color:#719e07">=</span> <span style="color:#b58900">id</span>(l)
+In [<span style="color:#2aa198">6</span>]: <span style="color:#719e07">del</span> l
+
+In [<span style="color:#2aa198">7</span>]: object_1 <span style="color:#719e07">=</span> {}
+   <span style="color:#719e07">...</span>: object_2 <span style="color:#719e07">=</span> {}
+   <span style="color:#719e07">...</span>: object_1[<span style="color:#2aa198">&#39;obj2&#39;</span>] <span style="color:#719e07">=</span> object_2
+   <span style="color:#719e07">...</span>: object_2[<span style="color:#2aa198">&#39;obj1&#39;</span>] <span style="color:#719e07">=</span> object_1
+
+In [<span style="color:#2aa198">8</span>]: obj_address <span style="color:#719e07">=</span> <span style="color:#b58900">id</span>(object_1)
+In [<span style="color:#2aa198">9</span>]: <span style="color:#719e07">del</span> object_1, object_2
+
+In [<span style="color:#2aa198">10</span>]: Object<span style="color:#719e07">.</span>from_address(obj_address)<span style="color:#719e07">.</span>refcnt
+Out[<span style="color:#2aa198">10</span>]: <span style="color:#2aa198">1</span>
+
+In [<span style="color:#2aa198">11</span>]: Object<span style="color:#719e07">.</span>from_address(lst_address)<span style="color:#719e07">.</span>refcnt
+Out[<span style="color:#2aa198">11</span>]: <span style="color:#2aa198">1</span>
+</code></pre></div><p>示例中，<code>del</code> 语句删除了对象的引用，对象被 <code>del</code> 后，我们不能再从 Python 代码中访问这些对象，但它们仍位于内存中。在 Python 2.0 版本以前，它们在程序运行中永远不会被释放。发生这种情况就是因为它们仍然相互引用，并且每个对象的引用计数为 1，感兴趣的同学你可以使用 <a href="https://mg.pov.lt/objgraph/">objgraph</a> 模块来直观地探索这种对象关系。</p>
+<h2 id="解决循环引用问题">解决循环引用问题</h2>
+<p>为了解决循环引用问题，CPython 引入了一种附加的循环引用检测算法来负责处理这样的问题（即自 Python 2.0 开始的 <a href="https://docs.python.org/3.6/library/gc.html">gc 模块</a>）。</p>
+<p>那么问题来了，为什么当时不采用上文说的几种传统回收算法（如 Mark and Sweep 或 Stop-and-Copy 等）呢？原因是由于 CPython 扩展模块的工作方式，CPython 永远<strong>无法完全确定根集</strong>，这样就有可能释放仍然在某个地方有引用的对象，造成程序崩溃。所以最终是在引用计数的基础上，设计了一种可以检测并处理循环引用的算法。</p>
+<blockquote>
+<p>提示：如果你使用搜索引擎搜索过相关的文章，你可能会发现很多文章都讲『Python 是以引用计数为主，标记-清除和分代收集为辅的』收集策略，这是错误的，CPython 中使用的循环引用检测算法（下一节中介绍）并不是标记-清除。使用标记-清除算法的是 Pypy 的 GC。</p>
+</blockquote>
+<p>从概念来说，CPython GC 与上述的几种算法刚好相反，它试图找出不可达的非活动对象，CPython 的开发者认为这将更加安全，即使算法失败，状况也不会比没有垃圾回收的情况更糟（除了浪费的时间和空间）。（就是感觉并不是那么自信 😂</p>
+<p>因为循环引用只会在容器类对象中发生，所以只需专注于跟踪所有的容器对象，而且，某些情况下的的容器对象也是不会产生循环引用的（例如只包含不可变对象的字典），所以对于这一类的对象可以进行取消跟踪的优化，取消跟踪一般会在以下两个时机进行：</p>
+<ol>
+<li>创建容器对象时</li>
+<li>容器对象被收集器检查时</li>
+</ol>
+<p>CPython GC 检测算法不会跟踪除元组以外的所有不可变类型，并且作为优化策略，只包含不可变对象的元组和字典也在某些条件下被取消跟踪（其中元组对象是在 GC 过程中决定是否继续跟踪，而字典对象会在创建和 GC 过程中决定）。</p>
+<p>我们可以使用 <code>gc.is_tracked(obj)</code> 函数来查看对象的跟踪状态。看几个例子：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">In [<span style="color:#2aa198">1</span>]: <span style="color:#719e07">import</span> gc
+
+In [<span style="color:#2aa198">2</span>]: gc<span style="color:#719e07">.</span>is_tracked(<span style="color:#2aa198">1</span>)
+Out[<span style="color:#2aa198">2</span>]: <span style="color:#268bd2">False</span>
+
+In [<span style="color:#2aa198">3</span>]: gc<span style="color:#719e07">.</span>is_tracked(<span style="color:#2aa198">&#39;s&#39;</span>)
+Out[<span style="color:#2aa198">3</span>]: <span style="color:#268bd2">False</span>
+
+In [<span style="color:#2aa198">4</span>]: gc<span style="color:#719e07">.</span>is_tracked([])
+Out[<span style="color:#2aa198">4</span>]: <span style="color:#268bd2">True</span>
+
+In [<span style="color:#2aa198">5</span>]: gc<span style="color:#719e07">.</span>is_tracked({})
+Out[<span style="color:#2aa198">5</span>]: <span style="color:#268bd2">False</span>
+
+In [<span style="color:#2aa198">6</span>]: gc<span style="color:#719e07">.</span>is_tracked({<span style="color:#2aa198">&#39;s1&#39;</span>: <span style="color:#2aa198">1</span>})
+Out[<span style="color:#2aa198">6</span>]: <span style="color:#268bd2">False</span>
+
+In [<span style="color:#2aa198">7</span>]: gc<span style="color:#719e07">.</span>is_tracked({<span style="color:#2aa198">&#39;s1&#39;</span>: []})
+Out[<span style="color:#2aa198">7</span>]: <span style="color:#268bd2">True</span>
+</code></pre></div><p>再来看一个对于字典和元组对象优化的例子:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">In [<span style="color:#2aa198">8</span>]: d <span style="color:#719e07">=</span> {<span style="color:#2aa198">&#39;s&#39;</span>: <span style="color:#2aa198">1</span>}
+
+In [<span style="color:#2aa198">9</span>]: gc<span style="color:#719e07">.</span>is_tracked(d)
+Out[<span style="color:#2aa198">9</span>]: <span style="color:#268bd2">False</span>
+
+In [<span style="color:#2aa198">10</span>]: d[<span style="color:#2aa198">&#39;l&#39;</span>] <span style="color:#719e07">=</span> []
+
+In [<span style="color:#2aa198">11</span>]: gc<span style="color:#719e07">.</span>is_tracked(d)
+Out[<span style="color:#2aa198">11</span>]: <span style="color:#268bd2">True</span>
+
+In [<span style="color:#2aa198">12</span>]: t <span style="color:#719e07">=</span> (<span style="color:#2aa198">1</span>,<span style="color:#2aa198">2</span>,<span style="color:#2aa198">3</span>)
+
+In [<span style="color:#2aa198">13</span>]: gc<span style="color:#719e07">.</span>is_tracked(t)
+Out[<span style="color:#2aa198">13</span>]: <span style="color:#268bd2">True</span>
+
+In [<span style="color:#2aa198">14</span>]: gc<span style="color:#719e07">.</span>collect()
+Out[<span style="color:#2aa198">14</span>]: <span style="color:#2aa198">1015</span>
+
+In [<span style="color:#2aa198">15</span>]: gc<span style="color:#719e07">.</span>is_tracked(t)
+Out[<span style="color:#2aa198">15</span>]: <span style="color:#268bd2">False</span>
+</code></pre></div><h3 id="如何找到循环引用">如何找到循环引用？</h3>
+<p>关于 CPython GC 检测循环引用的具体算法逻辑，很难用几段话解释。其主要是维护了两个双向链表，一个包含所有要扫描的对象，另一个包含『暂时』无法访问的所有对象。每个跟踪的容器的对象都有额外的 2+1 个字段，即两个链表指针和一个 <code>gc_refs</code> 字段（初始值为该对象的引用数）。然后寻找循环引用的大致思路是，遍历所有要扫描的容器对象，对于每个容器对象，找到它引用的所有容器对象，并减小其 <code>gc_refs</code> 值，经过完全迭代后，所有引用计数小于 2 的对象都再无法从 Python 访问，因此可以将其收集。</p>
+<p>为了完全理解循环引用查找算法，建议感兴趣的同学继续阅读 <a href="https://devguide.python.org/garbage_collector/#identifying-reference-cycles">dentifying reference cycles</a> 一节，或从 CPython 的源码中查看 <a href="https://github.com/python/cpython/blob/3.7/Modules/gcmodule.c#L797">collect</a> 函数。</p>
+<h2 id="使用分代策略优化">使用分代策略优化</h2>
+<p>CPython GC 有了上述循环引用检测算法，已经可以检测并处理掉程序中循环引用的对象了。接下来就需要关心性能问题了，因为它是定期运行的，所以 CPython 的开发者为此也引入了启发式的分代策略。</p>
+<p><u>为了使收集花费的时间尽可能短 </u>，CPython GC 将容器对象分为三代，每个新建的对象都归于最年轻第一代，如果该对象在一次垃圾收集中幸存下来，没有被释放，那么它将被移至较高(老)的一代——第二代。与高(老)世代相比，较低(年轻)世代的垃圾收集频率更高，所以大多数临时对象(局部变量等)的创建和清理都是很快的，由此提高了 GC 的性能减少了 GC 的暂停时间。</p>
+<p><u>为了决定何时执行 GC</u>，每个世代都有一个单独的<strong>计数器</strong>和<strong>阈值</strong>，计数器存储当代自上次垃圾收集以来<strong>分配对象数量减去被释放对象数量的差值</strong>，这得益于算法对容器对象的跟踪。每当你分配一个新的容器对象时，CPython 都会检查第一代计数器的值是否超过阈值。如果超过阈值，则在第一代中启动一次 GC(运行上述算法)，那些不会被使用的对象将会被释放，其余被移至第二代，更新计数器，以此类推。</p>
+<blockquote>
+<p>当前各代的计数器值可以通过 <code>gc.get_count()</code> 查看。标准阈值内置为(700, 10, 10)，你可以使用 <code>gc.get_threshold()</code> 查看, 还可以使用 <code>gc.get_threshold</code> 函数进行调整。<br>
+此外，你还可以通过 <code>gc.collect(generation=None)</code> 手动触发 GC。</p>
+</blockquote>
+<p>如果你有兴趣，可以继续在 CPython 的源码中查看 <a href="https://github.com/python/cpython/blob/3.7/Modules/gcmodule.c#L797">collect</a> 函数，以了解更加具体的算法逻辑。</p>
+<h1 id="总结">总结</h1>
+<p>CPython 的大部分垃圾收集是通过引用计数完成的，我们无法对其进行干涉调整，通过辅助的分代 GC 来处理循环引用，其可控，即 <a href="https://docs.python.org/3.6/library/gc.html">gc module</a>。关于性能：</p>
+<ol>
+<li>所有对象(包括数字、字符串)都必须实时正确的维护引用计数，这需要额外的内存与 CPU 开销，另外维护容器对象的跟踪字段(也需要额外的内存和 CPU 开销。</li>
+<li>WTP 时间其他实现相比相对较少，这得益于引用计数策略(只要没有太多的循环引用)，CPython 并没有对此进行特殊优化，如 Golang 的写屏障(Write Barrier)等。</li>
+<li>CPython GC 并没有将所有活动的可达对象拷贝到另一整块内存重新编排，所以还是会造成内存碎片。</li>
+</ol>
+<h1 id="提示或建议">提示或建议</h1>
+<p><strong>1.</strong> 如果你可以保证不会出现循环引用，则可以通过 <code>gc.disable</code> 完全禁用 GC，在某些情况下，禁用 GC 并手动 <code>gc.collect()</code> 很有用。<br>
+<strong>2.</strong> 为避免产生循环引用，可考虑使用弱引用 <a href="https://docs.python.org/3/library/weakref.html">weakref</a> ，<code>weakref.ref</code> 不会增加引用计数，并且当对象只剩弱引用时不会保持其活性（可以被 GC 正常回收），并在对象被释放后安全返回 <code>None</code>。<br>
+<strong>3.</strong> 循环在现实生活中很容易发生。通常，您会在图形，链接列表或结构中遇到它们，在其中需要跟踪对象之间的关系。如果您的程序工作量大且要求低延迟，则需要尽可能避免参考周期。</p>
+<h1 id="查找或调试分析循环引用">查找或调试分析循环引用</h1>
+<p><strong>1.</strong> 标准 <a href="https://docs.python.org/3.6/library/gc.html">gc 模块</a> 提供了接口可以帮助调试，例如 <code>gc.set_debug(gc.DEBUG_SAVEALL)</code>，则找到的所有的不可达对象将追加到 <code>gc.garbage</code> 列表中，你可以在其中查看。<br>
+<strong>2.</strong> 当你发现了循环引用的对象后，就可以使用上文中提到的 <a href="https://mg.pov.lt/objgraph/">objgraph</a> 来直观的探索它与其它对象间的关系。</p>
+<h1 id="参考">参考</h1>
+<ul>
+<li><a href="https://devguide.python.org/garbage_collector/">Design of CPython’s Garbage Collector</a></li>
+<li><a href="https://rushter.com/blog/python-garbage-collector/">Garbage collection in Python: things you need to know</a></li>
+<li><a href="http://arctrix.com/nas/python/gc/">Garbage Collection for Python</a></li>
+<li><a href="https://www.quora.com/How-does-garbage-collection-in-Python-work-What-are-the-pros-and-cons">How does garbage collection in Python work? What are the pros and cons?</a></li>
+</ul>
+
+		</div>
+		<br>
+		
+		
+		<hr>
+			<footer class="post__footer">
+				
+<div class="post__tags tags clearfix">
+	<svg class="tags__badge icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/gc/" rel="tag">gc</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/%E5%9F%BA%E7%A1%80%E5%8E%9F%E7%90%86/" rel="tag">基础原理</a></li>
+	</ul>
+</div>
+			</footer>
+		
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<a href="/about">
+			<img alt="关于 feileo avatar" src="https://cdn.at7h.com/img/avatar.jpg" class="avatar" height="90"
+				width="90">
+		</a>
+	</figure>
+	<div class="authorbox__header">
+		<a href="/about">
+			<span class="authorbox__name">关于 feileo</span>
+		</a>
+	</div>
+	<div class="authorbox__description">
+		You may say I&#39;m a dreamer, but I&#39;m not the only one.
+	</div>
+	<div class="authorbox__description_sub">
+		--John Winston Lennon 《Imagine》
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/posts/helo/" rel="prev"><span class="post-nav__caption">«&thinsp;上一篇</span><p class="post-nav__post-title">Helo 快速上手指南</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/posts/py-classes/" rel="next"><span class="post-nav__caption">下一篇&thinsp;»</span><p class="post-nav__post-title">走进 Python 类的内部</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+    <div id="utter-container"></div>
+    <script src="https://utteranc.es/client.js"
+        repo= 'feileo/feileo.github.io'
+        issue-term= "pathname"
+        theme= 'github-light'
+        crossorigin= "anonymous",
+        label='✨💬✨'
+        async>
+	</script> 
+</section>
+
+
+
+			</div>
+			
+		</div>
+		<footer class="footer">
+	<div>
+		
+		<div class="footer__copyright">
+			<div class="footer__text">
+				<p>本博客基于 <a href="https://golang.google.cn/" target="_blank"> Golang </a> + <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> +  <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> 构建</p>
+        <p>本站由 <a href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral" target="_blank"><img width="50" src="https://cdn.at7h.com/img/upyun_logo.png"></a> 提供 CDN 加速/静态资源存储服务</p>
+				<p>由 <a href="https://utteranc.es/" target="_blank"><img width="19" src="https://cdn.at7h.com/img/utteranc.png"> utterances</a> 提供评论系统</p>
+				<p>
+					<span id="busuanzi_container_site_pv">
+						本站运行自 2020-10-01,
+						累计 PV
+						1<span id="busuanzi_value_site_pv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>,
+					<span id="busuanzi_container_site_uv">
+						UV <span id="busuanzi_value_site_uv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>
+				</p>
+		<p>
+			<a target="_blank" href="/sitemap.xml">站点地图</a> &nbsp;·&nbsp; 
+			<a target="_blank" href="/index.xml" type="application/rss+xml" title="rss"> RSS 
+			</a>
+		</p>
+        <p>版权所有 &copy; 2021 at7h.com</p>
+        
+
+			</div>
+		</div>
+		<div class="footer__text__sub">
+			<a target="_blank" href="http://beian.miit.gov.cn">京 ICP 备 2020037066 号 - 1</a>
+			<br>
+			<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=61092802000118">
+				<img style="vertical-align: text-bottom;" width="18" src="https://cdn.at7h.com/img/beian.png">
+				陕公网安备 61092802000118 号
+      </a>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+</body>
+</html>

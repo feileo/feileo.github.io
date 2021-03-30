@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>tool on feileo</title>
+    <link>https://at7h.com/categories/tool/</link>
+    <description>Recent content in tool on feileo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Wed, 03 Jun 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://at7h.com/categories/tool/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Sentry 服务的搭建和使用</title>
+      <link>https://at7h.com/posts/sentry-install/</link>
+      <pubDate>Wed, 03 Jun 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/sentry-install/</guid>
+      <description>Sentry 是一个开源的非常强大的实时异常收集系统，可以为开发者的提供帮助、诊断，修复和优化其代码的性能的能力，可以用它来监控线上服务的健康状态，实时收集的异常堆栈信息可以帮助我们快速发现、定位和修复问题。支持 Web 前后端、移动应用以及游戏，90 余种主流语言和相关框架，同时还提供了非常友好的管理页面，错误告警、指派、统计等其他丰富的功能。更多介绍可以查看官方文档。 Sentry 提供了商用的服务，可以直接在官网购买。同时也提供了开源版本，可以自行搭建安装。最近刚好为组里的几个服务搭建和引入 Sentry，就记录下来与大家分享。 Sentry 提供了两种安装方式：docker 和 Python 包。 我这里推荐搭建使用第一种方式，比较简便，否则你需要自行安装和启动 PostgreSQL、Redis、Kafka 等一系列服务和创建表等操作。 本文主要介绍使用 docker 的方式进行安装， 部署 Sentry 环境准备 1. 安装 docker $ curl -sSL https://get.daocloud.io/docker | sh 如果已经安装了其他历史版本，请在安装前先卸载。 2. 安装 docker-compose $ sudo curl -L &amp;quot;https://github.com/docker/compose/releases/download/1.27.1/docker-compose-$(uname -s)-$(uname -m)&amp;quot; -o /usr/local/bin/docker-compose $ sudo chmod +x /usr/local/bin/docker-compose 查看是否安装成功： $ docker -v Docker version 19.03.1, build 74b1e89 $ docker-compose -v docker-compose version 1.27.1, build 1110ad01 安装 Sentry 1. 获取 onpremise $ git clone https://github.com/getsentry/onpremise.git 2. 执行安装脚本 进入 onpremise 目录执行脚本： $ cd onpremise $ ./install.sh 这个过程稍微有点慢，安装过程中会提示你创建管理者（admin/owner）的账号和密码，请注意留意，按照提示输入即可。 3. 设置邮件等配置 这一步骤是非必须的，启动时会有一个配置的页面，到时候再根据提示填写也是可以的 配置文件为 sentry/config.yml，需要设置邮件、域名等，具体配置可以参见官方文档。 启动服务 安装完成后启动服务: $ docker-compose up -d 然后访问 http://localhost:9000，使用刚刚创建的管理员账号登录。 登录之后会有一个设置页面输入必需的配置，需要你输入一些必需的配置，如 Root URL、 SMTP 服务器等，具体配置参数的意思可以参见官方文档。 如果你在上面的第 3 步已经在 sentry/config.yml 中配置了相关的参数，这里就没有相应的选项了。比如你已经配置了 system.url-prefix（部署服务的域名） 那么这里就没有第一项 Root URL 输入项了。 测试/修改配置 为保证邮箱（SMTP 服务器）配置正确，最好测试一下，进入 admin -&amp;gt; Mail 发送一封测试邮件看看: 测试 SMTP 配置 -- 如果你想更改配置，上图目录视图下点击 Settings 修改即可，修改完成后别忘记重启哦: $ docker-compose down &amp;amp;&amp;amp; docker-compose up -d 接入 Sentry 安装并部署好 sentry 服务后，就可以为你的服务创建一个 project，选择你的语言或者框架: 接着在你的服务项目中接入 sentry 即可: 具体语言或框架的接入文档参见官方接入文档。 问题 1. 正常情况下安装过程中是会出现输入管理员账号密码的步骤的，如果没有创建 admin 账户，可以执行： $ docker-compose run --rm web createuser 具体可以查阅这个 issue。 暂时没遇到其他问题，如果您遇到了欢迎留言，一起探讨，再补充。</description>
+    </item>
+    
+    <item>
+      <title>在 tmux 环境中使用 tmux-256color</title>
+      <link>https://at7h.com/posts/install-tmux256-formac/</link>
+      <pubDate>Mon, 11 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/install-tmux256-formac/</guid>
+      <description>在 macOS 中，我们 iTerm2 中的 terminal color 一般都设置为 xterm-256color，这没毛病，但问题是它不能在 tmux 环境中使用: $TERM should be &amp;quot;screen-256color&amp;quot; or &amp;quot;tmux-256color&amp;quot; in tmux. Colors might look wrong. 为此，我们可以在 zshrc 中加上这样一段配置： if [[ $TMUX != &amp;#34;&amp;#34; ]] then export TERM=&amp;#34;tmux-256color&amp;#34; else export TERM=&amp;#34;xterm-256color&amp;#34; fi 而在 tmux 环境中一般默认使用系统自带的 screen-256color，这在大多数情况是够用的，但是它不支持任何斜体字体样式，所以在 Vim 中类似代码高亮这种就会很有问题。 为此，我们可以在 tmux.conf 中加上设置： set -g default-terminal &amp;#34;tmux-256color&amp;#34; set-option -a terminal-overrides &amp;#34;,*256col*:RGB&amp;#34; 新建一个 session 测试一下： tnew test # tmux new -s test 发现报错: can&#39;t find terminal definition for tmux-256color。 原因是系统默认是没有 tmux-256color 的，需要我们手动安装，加上相应的 terminfo 就可以了。 tmux-256color 详细安装教程：Installing tmux-256color for macOS 感兴趣的同学可以参考我的配置，欢迎大家评论留言，与我交流。</description>
+    </item>
+    
+    <item>
+      <title>Mac 神器 Karabiner-Elements 推荐</title>
+      <link>https://at7h.com/posts/karabiner/</link>
+      <pubDate>Wed, 06 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/karabiner/</guid>
+      <description>今天给大家推荐一款 Mac 下的键盘键位定制化神器 Karabiner-Elements，你可以用它来尽情随意的修改你的键位设置。 对于程序员来说，键盘 ⌨️ 可谓是最亲近的东西了，毕竟每天摸的最多的就是它 🌝，很多同学都会尝试根据自己的使用习惯来更改键位，以提高输入体验。 我个人比较喜欢小键盘，之前使用 poker2 时就通过 Mac 系统自带的「修饰键更改」功能将大写锁定键改成了 Control，因为大写锁定键几乎没什么用，反而占据了一个绝好的位置。 近期入手了 hhkb，唯一美中不足的是它的方向键有点鸡肋，虽然我是 vim 用户，对方向键的依赖比较小一些，但还是感觉不太方便。一通搜索，发现了一款 Mac 下的键位定制化神器 Karabiner-Elements。将方向键改为 command+hjkl，就直接起飞 😎。 你可以根据需要更换任何键位: 提示： 如果你不清楚你要修改的键叫什么名字，可以使用它自带的 Karabiner-EventViewer 来查看。 如下图，你也可以添加别人配置好的 Rule Mode，点击 『Add rule』即可选择： 没有想要的？试试 『Import more &amp;hellip;』吧： 现在很多键盘都会有一些内置一些键位更改的选项，如 poker，hhkb 等，但支持很有限。如果你想自定义键位，那么 Karabiner-Elements 可以满足你的任何需求。 关于下载安装和使用，请查看官方文档。</description>
+    </item>
+    
+    <item>
+      <title>Chrome 网页截图小技巧</title>
+      <link>https://at7h.com/posts/screenshot/</link>
+      <pubDate>Wed, 25 Mar 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/screenshot/</guid>
+      <description>很多时候，我们都有网页截图的需求，而通常我们都会使用系统截图工具，或是通过 QQ、微信等第三方软件的截图功能来完成。而有时候，需要截取整个网页，对于那些有滚动条的页面来说，上述的截图工具只能截取当前屏幕显示的页面，并不能满足需求。这个时候你可能想借助一些工具插件来完成，但其实 Chrome 开发者工具中已经自带了截图命令，个人觉得效果也令人满意。 所以，下面就来介绍下 Chrome 开发者工具截图命令的使用(mac)： 提示：在此之前，请确保 Chrome 已升级至 59 或更高版本 1. 打开开发者工具：在你想要截图的网页上，按下 F12 或 ⌘Command + ⌥Option + j，也或者右键然后选择「检查」，打开开发者工具。 2. 输入截图命令：随后，按 ⌘Command + ⇧Shift + P 调出命令输入框，然后输入 Capture full size screenshot（只输前几个字母就能找到），找到对应后项然后回车即可。 除了整个网页长截图以外，如果你想准确截取网页的某一部分，没问题！按 ⌘Command + ⇧Shift + C 嗅探元素（即上图中红色框中的那个小箭头），选中想要的部分后，再运行刚才的命令，就可以了。 最后，你还可以进入移动设备模拟的模式下获取手机或者平板的截图，按 ⌘Command + ⇧Shift + M(即上图中红色框中的那个手机的标识)，然后运行刚才的命令就可以啦，在顶部的工具栏中，你还可以选择要模拟的设备和分辨率等。</description>
+    </item>
+    
+  </channel>
+</rss>

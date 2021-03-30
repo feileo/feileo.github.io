@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="baidu-site-verification" content="0iFDP8mhHL" />
+	<title>
+		
+			
+				Helo 快速上手指南 -
+			
+			feileo
+		 的博客
+	</title>
+	<script>
+		(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");
+	</script>
+	<meta name="description" content="Helo 是本人业余开发的一个简单小型低级别异步(asyncio) Python ORM，可以在你的异步应用中帮助你轻松的构建出富有表达力的常用 SQL 语句，你只需通过友好的对象化 API 来操作你的数据即可，而不用...">
+	
+		<meta property="og:title" content="Helo 快速上手指南" />
+<meta property="og:description" content="Helo 是本人业余开发的一个简单小型低级别异步(asyncio) Python ORM，可以在你的异步应用中帮助你轻松的构建出富有表达力的常用 SQL 语句，你只需通过友好的对象化 API 来操作你的数据即可，而不用..." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://at7h.com/posts/helo/" />
+<meta property="article:published_time" content="2020-08-18T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-08-18T00:00:00+00:00" />
+
+	
+	
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	
+	<link rel="shortcut icon" href="/img/favicon.ico">
+	
+		
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-155215466-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+	<link rel="stylesheet" href="/highlight/styles/atom-one-dark.css">
+
+	<script src="/js/jquery.min.js"></script>
+	<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+	<script src="/highlight/highlight.pack.js" type='text/javascript'></script>
+	
+	<script type="text/javascript">
+	$(document).ready(function(){
+    hljs.initHighlightingOnLoad();
+		
+	});
+
+	(function(){
+		var bp = document.createElement('script');
+		var curProtocol = window.location.protocol.split(':')[0];
+		if (curProtocol === 'https') {
+			bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+		}
+		else {
+			bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+		}
+		var s = document.getElementsByTagName("script")[0];
+		s.parentNode.insertBefore(bp, s);
+  	})();
+	</script>
+</head>
+
+<body class="body">
+	<div class="container container--outer">
+		<header class="header">
+    <div class="container">
+        <div class="logo">
+            <a class="logo__link" href="/" title="feileo" rel="home">
+              <div class="logo__title">
+								feileo  
+							</div>
+							
+							<div class="logo__tagline">关注互联网开发技术，记录、总结与分享 👣</div>
+							
+						</a>
+						
+        </div>
+        
+
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1"><svg t="1571404030009" class="meta__icon icon icon-list" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1829" width="20" height="20"><path d="M892.928 128q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 448.512q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 769.024q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0z" p-id="1830" fill="#1e90ff"></path></svg></span>
+	</button>
+	<mul class="menu__list">
+		
+		<li class="menu__item">
+			<a class="menu__link__home" href="/"><svg t="1571149675735" class="meta__icon icon icon-home" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3856" width="22" height="22"><path d="M230.4 992c-64 0-115.2-51.2-115.2-115.2L115.2 544 76.8 582.4C70.4 588.8 57.6 595.2 44.8 595.2c-12.8 0-25.6-6.4-32-12.8C6.4 569.6 0 556.8 0 544 0 537.6 6.4 524.8 12.8 512l467.2-467.2C486.4 38.4 499.2 32 512 32s25.6 6.4 32 12.8L1011.2 512C1017.6 524.8 1024 537.6 1024 544c0 12.8-6.4 25.6-12.8 32-6.4 6.4-19.2 12.8-32 12.8s-25.6-6.4-32-12.8L512 147.2 211.2 448l0 422.4c0 12.8 12.8 25.6 25.6 25.6l115.2 0 0-185.6c0-25.6 19.2-44.8 44.8-44.8l230.4 0c25.6 0 44.8 19.2 44.8 44.8s-19.2 44.8-44.8 44.8L441.6 755.2l0 185.6c0 25.6-19.2 44.8-44.8 44.8L230.4 985.6zM627.2 992c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8l160 0c12.8 0 25.6-12.8 25.6-25.6l0-256c0-25.6 19.2-44.8 44.8-44.8 25.6 0 44.8 19.2 44.8 44.8l0 256c0 64-51.2 115.2-115.2 115.2L627.2 992z" p-id="3857" fill="#ffffff"></path></svg></a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/python">Python</a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/golang">Golang</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/vim">Vim</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link" href="/categories/tool">效率工具</a>
+			
+		</li>
+		
+		
+		
+		
+		
+	</mul>
+</nav>
+
+    </div>
+</header>
+
+
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<div class="post__title">Helo 快速上手指南</div>
+			<div class="post__meta meta">
+					
+<div class="meta__item-categories meta__item">
+	<svg t="1571148699121" class="meta__icon icon icon-category" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5705" width="16" height="16"><path d="M853.333333 938.666667 42.666667 938.666667c-25.6 0-42.666667-17.066667-42.666667-42.666667L0 128c0-25.6 17.066667-42.666667 42.666667-42.666667l298.666667 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 42.666667 469.333333 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 170.666667c0 25.6-17.066667 42.666667-42.666667 42.666667s-42.666667-17.066667-42.666667-42.666667L810.666667 256 341.333333 256C315.733333 256 298.666667 238.933333 298.666667 213.333333L298.666667 170.666667 85.333333 170.666667l0 682.666667 768 0c25.6 0 42.666667 17.066667 42.666667 42.666667S878.933333 938.666667 853.333333 938.666667z" p-id="5706" fill="#515151"></path><path d="M853.333333 938.666667 42.666667 938.666667c-12.8 0-25.6-4.266667-34.133333-17.066667S0 900.266667 0 887.466667l128-512C132.266667 354.133333 149.333333 341.333333 170.666667 341.333333l810.666667 0c12.8 0 25.6 4.266667 34.133333 17.066667S1024 379.733333 1024 392.533333l-128 512C891.733333 925.866667 874.666667 938.666667 853.333333 938.666667zM98.133333 853.333333l721.066667 0 106.666667-426.666667L204.8 426.666667 98.133333 853.333333z" p-id="5707" fill="#515151"></path></svg>
+	<span class="meta__text">
+		
+		<a class="meta__link" href="/categories/python" rel="category">
+			
+			Python
+			
+		</a>
+		
+	</span>
+</div>
+
+<div class="meta__item-datetime meta__item">
+	<svg t="1571148896140" class="meta__icon icon icon-date" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8190" width="16" height="16"><path d="M883.278513 148.539035l-43.016723 0 0-12.780071c0-38.310537-31.199583-69.632917-69.323878-69.632917l-1.02433 0c-38.129412 0-69.323878 31.321356-69.323878 69.632917l0 12.780071L317.20292 148.539035l0-12.780071c0-38.310537-31.195489-69.632917-69.323878-69.632917l-1.055029 0c-38.127366 0-69.322855 31.321356-69.322855 69.632917l0 12.780071-42.924625 0c-38.127366 0-69.323878 31.351032-69.323878 69.609381l0 665.701614c0 38.309514 31.195489 69.632917 69.323878 69.632917l748.70198 0c38.127366 0 69.322855-31.323403 69.322855-69.632917l0-665.701614C952.601368 179.890067 921.405879 148.539035 883.278513 148.539035L883.278513 148.539035zM728.318232 135.758963c0-23.024389 18.632359-41.777499 41.594327-41.777499l1.02433 0c22.931269 0 41.593304 18.753109 41.593304 41.777499L812.530193 259.615852c0 23.024389-18.662035 41.778522-41.593304 41.778522l-1.02433 0c-22.961968 0-41.594327-18.754133-41.594327-41.778522L728.318232 135.758963 728.318232 135.758963zM205.23071 135.758963c0-23.024389 18.632359-41.777499 41.599444-41.777499l1.048889 0c22.903639 0 41.594327 18.753109 41.594327 41.777499L289.473369 259.615852c0 23.024389-18.691711 41.778522-41.594327 41.778522l-1.048889 0c-22.967084 0-41.599444-18.754133-41.599444-41.778522L205.23071 135.758963 205.23071 135.758963zM883.278513 897.807926l-748.70198 0c-7.519254 0-13.864776-6.468318-13.864776-13.957897L120.711757 394.394489l776.433578 0 0 489.455541C897.144312 891.338584 890.797767 897.807926 883.278513 897.807926L883.278513 897.807926zM222.614635 494.083955l127.918391 0 0 62.950727L222.614635 557.034682 222.614635 494.083955 222.614635 494.083955zM445.963493 494.083955l126.906342 0 0 62.950727L445.963493 557.034682 445.963493 494.083955 445.963493 494.083955zM668.299277 494.083955l124.873032 0 0 62.950727L668.299277 557.034682 668.299277 494.083955 668.299277 494.083955zM222.614635 622.00951l127.918391 0 0 61.927421L222.614635 683.936931 222.614635 622.00951 222.614635 622.00951zM445.963493 622.00951l126.906342 0 0 61.927421L445.963493 683.936931 445.963493 622.00951 445.963493 622.00951zM668.299277 622.00951l124.873032 0 0 61.927421L668.299277 683.936931 668.299277 622.00951 668.299277 622.00951zM222.614635 746.884588l127.918391 0 0 64.97278L222.614635 811.857369 222.614635 746.884588 222.614635 746.884588zM445.963493 746.884588l126.906342 0 0 64.97278L445.963493 811.857369 445.963493 746.884588 445.963493 746.884588zM668.299277 746.884588l124.873032 0 0 64.97278L668.299277 811.857369 668.299277 746.884588 668.299277 746.884588zM668.299277 746.884588" p-id="8191" fill="#515151"></path></svg>
+	更新于 <time class="meta__text" datetime="2020-08-18T00:00:00">2020-08-18</time>
+</div>
+
+<div class="meta__item-word_count meta__item">
+	<svg t="1571149110363" class="meta__icon icon icon-wordcount" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1792" width="16" height="16"><path d="M286.722048 405.987328l0 477.058048-132.51584 0L154.206208 405.987328 286.722048 405.987328M313.22624 352.980992 127.70304 352.980992c-14.636032 0-26.503168 11.867136-26.503168 26.503168L101.199872 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.5232 0c14.636032 0 26.503168-11.867136 26.503168-26.503168L339.729408 379.483136C339.729408 364.847104 327.862272 352.980992 313.22624 352.980992L313.22624 352.980992zM577.998848 563.557376l0 319.488L445.476864 883.045376l0-319.488L577.998848 563.557376M604.502016 510.543872l-185.52832 0c-14.636032 0-26.503168 11.859968-26.503168 26.510336L392.470528 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.52832 0c14.623744 0 26.504192-11.867136 26.504192-26.503168L631.006208 537.054208c0-14.623744-11.880448-26.497024-26.504192-26.497024l0 0L604.502016 510.543872zM869.792768 140.954624l0 742.090752L737.5104 883.045376l0-742.090752L869.792768 140.954624M896.29696 87.948288 711.007232 87.948288c-14.649344 0-26.503168 11.867136-26.503168 26.503168L684.504064 909.54752c0 14.636032 11.853824 26.503168 26.503168 26.503168L896.29696 936.050688c14.636032 0 26.503168-11.867136 26.503168-26.503168l0-795.096064C922.800128 99.815424 910.932992 87.948288 896.29696 87.948288L896.29696 87.948288z" p-id="1793" fill="#515151"></path></svg>
+    约 <span class="meta__text">3380</span> 个字
+</div>
+
+<div class="meta__item-reading_time meta__item">
+	<svg t="1571149199980" class="meta__icon icon icon-time" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2748" width="16" height="16"><path d="M512 64C264.96 64 64 264.96 64 512s200.96 448 448 448 448-200.96 448-448S759.04 64 512 64zM512 895.712c-211.584 0-383.712-172.16-383.712-383.712C128.288 300.416 300.416 128.288 512 128.288c211.552 0 383.712 172.128 383.712 383.712C895.712 723.552 723.552 895.712 512 895.712z" p-id="2749" fill="#515151"></path><path d="M671.968 512 512 512 512 288.064c0-17.76-14.24-32.128-32-32.128s-32 14.4-32 32.128L448 544c0 17.76 14.272 32 32 32l191.968 0c17.76 0 32.128-14.24 32.128-32S689.728 512 671.968 512z" p-id="2750" fill="#515151"></path></svg>    
+    阅读约需 <span class="meta__text">
+        
+            7
+         m</span>
+</div>
+
+						<div class="meta__item-page_pv meta__item">
+    
+    <span class="meta__text">
+        <span id="busuanzi_container_page_pv">
+            
+        </span>
+    </span>
+</div>
+				</div>
+		</header>
+		<div class="content post__content clearfix">
+			<p><img src="https://cdn.at7h.com/img/helo.png" alt="helo&rsquo;s logo" title="helo's logo" /></p>
+<p>其中，u.update(name=&quot;Daisy&rdquo;) 与 u.name = &ldquo;Daisy&rdquo; 类似，都是只在内存里修改对象的属性，不同的是 u.update() 还会返回一个包含本次变更的中间结果，对其执行 await xxx.apply() 则会将这些变更应用到数据库里。</p>
+<p><strong>Helo</strong> 是本人业余开发的一个简单小型低级别的异步(<a href="https://docs.python.org/3.7/library/asyncio.html">asyncio</a>) Python ORM。它几乎没有什么概念，非常直白，容易上手使用。</p>
+<blockquote>
+<p>此处去往<a href="https://github.com/at7h/helo">项目仓库</a> ，欢迎使用、提出意见或贡献代码 😊</p>
+</blockquote>
+<p>Helo 可以在你的异步应用中帮助你轻松的构建出富有表达力的常用 SQL 语句，你只需以友好的对象化 API 来操作数据，而不用关心 SQL 语句编写、数据处理等细节。</p>
+<blockquote>
+<p>请注意：使用异步 ORM 并不完全意味着可以使你的应用变快，而且有可能会使你的应用变得复杂。继续之前，你可以先阅读下 SQLAlchemy 作者 Mike Bayer 的 <a href="https://techspot.zzzeek.org/2015/02/15/asynchronous-python-and-databases/">这篇博客文章</a>。</p>
+</blockquote>
+<p>本篇上手指南主要介绍以下方面:</p>
+<ul>
+<li><a href="#%E5%BC%80%E5%A7%8B%E4%BD%BF%E7%94%A8">安装 helo</a></li>
+<li><a href="#%E6%A8%A1%E5%9E%8B%E5%A3%B0%E6%98%8E">模型声明</a></li>
+<li><a href="#%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5">建立连接</a></li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C">数据操作</a></li>
+<li><a href="#quart-%E5%BA%94%E7%94%A8">在 quart 应用中使用 helo</a></li>
+<li><a href="#%E5%85%B6%E4%BB%96">其他补充</a></li>
+</ul>
+<h1 id="开始使用">开始使用</h1>
+<p>安装 <a href="https://github.com/at7h/helo">helo</a> 可以通过以下两种方式:</p>
+<p><strong><em>1.</em></strong> 安装 pypi 的稳定发布版本, 在终端中运行此命令:</p>
+<pre><code class="language-console" data-lang="console">$ pip install helo
+</code></pre><p><strong><em>2.</em></strong> 从最新的源码安装</p>
+<pre><code class="language-console" data-lang="console">$ git clone https://github.com/at7h/helo.git
+$ cd helo
+$ python setup.py install
+</code></pre><p>安装完成后就开始下面的入坑之旅了 😈 。</p>
+<hr>
+<p>使用 <a href="https://github.com/at7h/helo">helo</a>, 首先你需要引入 <code>helo</code> 并使用 <code>helo.G</code> 实例化一个全局变量，假定称其为 <code>db</code>:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">import</span> helo
+
+db <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>G()
+</code></pre></div><p><code>db</code> 是一个全局单例对象，下面的介绍中我们将多次使用到它。</p>
+<h1 id="模型声明">模型声明</h1>
+<p>使用 <a href="https://github.com/at7h/helo">helo</a> 声明模型很简单，只需从 <code>helo.Model</code> 继承即可。下面给出几个模型声明的简单的例子：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">Person</span>(helo<span style="color:#719e07">.</span>Model):
+    <span style="color:#b58900">id</span> <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>BigAuto()
+    name <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>VarChar(length<span style="color:#719e07">=</span><span style="color:#2aa198">45</span>, null<span style="color:#719e07">=</span><span style="color:#268bd2">False</span>)
+
+<span style="color:#719e07">class</span> <span style="color:#268bd2">User</span>(Person):
+    email <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Email(default<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;&#39;</span>)
+    password <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>VarChar(length<span style="color:#719e07">=</span><span style="color:#2aa198">100</span>, null<span style="color:#719e07">=</span><span style="color:#268bd2">False</span>)
+    create_at <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Timestamp(default<span style="color:#719e07">=</span>helo<span style="color:#719e07">.</span>ON_CREATE)
+
+    <span style="color:#719e07">class</span> <span style="color:#268bd2">Meta</span>:
+        indexes <span style="color:#719e07">=</span> [helo<span style="color:#719e07">.</span>K(<span style="color:#2aa198">&#39;idx_ep&#39;</span>, [<span style="color:#2aa198">&#39;email&#39;</span>, <span style="color:#2aa198">&#39;password&#39;</span>])]
+
+<span style="color:#719e07">class</span> <span style="color:#268bd2">Employee</span>(Person):
+    department <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Smallint()
+    salary <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Float(default<span style="color:#719e07">=</span><span style="color:#2aa198">0</span>)
+
+<span style="color:#719e07">class</span> <span style="color:#268bd2">Post</span>(helo<span style="color:#719e07">.</span>Model):
+    <span style="color:#b58900">id</span> <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Auto(comment<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;auto increment pk&#39;</span>)
+    title <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>VarChar(length<span style="color:#719e07">=</span><span style="color:#2aa198">100</span>)
+    content <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Text(encoding<span style="color:#719e07">=</span>helo<span style="color:#719e07">.</span>ENCODING<span style="color:#719e07">.</span>UTF8MB4)
+    author <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Int(default<span style="color:#719e07">=</span><span style="color:#2aa198">0</span>)
+    create_at <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Timestamp(default<span style="color:#719e07">=</span>helo<span style="color:#719e07">.</span>ON_CREATE)
+    update_at <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>Timestamp(default<span style="color:#719e07">=</span>helo<span style="color:#719e07">.</span>ON_UPDATE)
+
+    <span style="color:#719e07">class</span> <span style="color:#268bd2">Meta</span>:
+        indexes <span style="color:#719e07">=</span> [
+            helo<span style="color:#719e07">.</span>K(<span style="color:#2aa198">&#39;idx_title&#39;</span>, <span style="color:#2aa198">&#39;title&#39;</span>),
+            helo<span style="color:#719e07">.</span>K(<span style="color:#2aa198">&#39;idx_author&#39;</span>, <span style="color:#2aa198">&#39;author&#39;</span>),
+        ]
+</code></pre></div><p>内部类 <code>Meta</code> 可用于指定 <code>db_name</code>, <code>table_name</code>, <code>engine</code>, <code>indexes</code>, <code>charset</code>, <code>comment</code> 等
+<code>Table</code> 的元属性。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">Meta</span>:
+    db <span style="color:#719e07">=</span> <span style="color:#2aa198">&#39;db_name&#39;</span>
+    name <span style="color:#719e07">=</span> <span style="color:#2aa198">&#39;table_name&#39;</span>
+    engine <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>ENGINE<span style="color:#719e07">.</span>innodb
+    charset <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>ENCODING<span style="color:#719e07">.</span>utf8mb4
+    indexes <span style="color:#719e07">=</span> []
+    comment <span style="color:#719e07">=</span> <span style="color:#2aa198">&#39;table comment&#39;</span>
+</code></pre></div><p>其中 <code>table_name</code> 默认为 model 类名的 <a href="https://en.wikipedia.org/wiki/Snake_case">snake_case</a> 风格名称，<code>engine</code> 默认为 <code>InnoDB</code>，<code>charset</code> 默认为 <code>utf8mb4</code>。</p>
+<h1 id="建立连接">建立连接</h1>
+<p>前面的模型声明只是定义了模型与真实表结构的映射关系，并非实际在数据库中创建了这些表结构。为此，我们需要先使用 <a href="https://github.com/at7h/helo">helo</a> 来与数据库建立连接，这里我们创建一个 MySQL 的数据库实例：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> await db<span style="color:#719e07">.</span>bind(<span style="color:#2aa198">&#39;mysql://user:pwd@localhost:3306/helo&#39;</span>)
+</code></pre></div><p>或者传递配置参数：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> await db<span style="color:#719e07">.</span>bind(user<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;user&#39;</span>, password<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;pwd&#39;</span>, db<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;helo&#39;</span>)
+</code></pre></div><p>如果你设置了环境变量 <code>HELO_DATABASE_URL</code>，那么你不用再传递 url:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> await db<span style="color:#719e07">.</span>bind()
+</code></pre></div><blockquote>
+<p>如果你想自定义 KEY 的值，可以在初始化 <code>db</code> 时通过 <code>env_key</code> 参数来设置:</p>
+<p><code>db = helo.G(env_key=&quot;YOUR_ENV_KEY&quot;)</code></p>
+</blockquote>
+<p><code>bind</code> 实际上为我们创建了一个数据库连接池：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> db<span style="color:#719e07">.</span>state
+{<span style="color:#2aa198">&#39;minsize&#39;</span>: <span style="color:#2aa198">1</span>, <span style="color:#2aa198">&#39;maxsize&#39;</span>: <span style="color:#2aa198">15</span>, <span style="color:#2aa198">&#39;size&#39;</span>: <span style="color:#2aa198">1</span>, <span style="color:#2aa198">&#39;freesize&#39;</span>: <span style="color:#2aa198">1</span>}
+</code></pre></div><p><code>bind</code> 给我们提供了很多关键字参数来允许我们自定义设置，详见 <a href="https://github.com/at7h/helo/blob/master/helo/db.py#L175">helo.db.Pool</a> 类。例如：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> await db<span style="color:#719e07">.</span>bind(<span style="color:#2aa198">&#39;mysql://user:pwd@127.0.0.1:3306/db&#39;</span>, maxsize<span style="color:#719e07">=</span><span style="color:#2aa198">10</span>, connect_timeout<span style="color:#719e07">=</span><span style="color:#2aa198">15</span>)
+</code></pre></div><p>已经创建的连接池对象将是一个全局的单例对象，也就是说如果你已经为你的应用程序调用 <code>bind</code> 绑定了数据库，在此之前如果你没有使用 <code>unbind</code> 进行解绑，你将不能再继续使用 <code>bind</code> 再次绑定另一个数据库，否则你将会得到一个 <code>helo.err.DuplicateBinding</code> 错误。</p>
+<p>如果你需要显式地断开与数据库的连接，关闭连接池，可以使用 <code>unbind</code>:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> await db<span style="color:#719e07">.</span>unbind()
+</code></pre></div><p>在小型的脚本中你可以使用 <code>db.binder</code> 来自动处理上下文：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> async <span style="color:#719e07">with</span> db<span style="color:#719e07">.</span>binder():
+<span style="color:#719e07">...</span>     <span style="color:#719e07">pass</span>
+</code></pre></div><h1 id="数据操作">数据操作</h1>
+<p>与数据库建立了连接之后，我们需要在数据库创建我们的表，以便于接下来进行数据的操作。</p>
+<p>在真正的应用中，数据库表的设计创建与维护是单独分开，一般由专门的 DBA 来管理。当然 helo 也提供了基础的 DDL 支持。</p>
+<p>下面我们在数据库创建它们：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> await db<span style="color:#719e07">.</span>create_tables([User, Employee, Post])
+</code></pre></div><p>在应用项目中，我们通常将所有的模型声明单独放在一个模块中，在此假设模块名为 <code>models</code>，则可以使用 <code>create_all</code> 为模块中所有的 model 创建表：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">from</span> your.application <span style="color:#719e07">import</span> models
+<span style="color:#719e07">&gt;&gt;&gt;</span> await db<span style="color:#719e07">.</span>create_all(models)
+</code></pre></div><p>当然你也可以使用 <code>Model</code> 的方法来单独创建:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> await User<span style="color:#719e07">.</span>create()
+</code></pre></div><p><a href="https://github.com/at7h/helo">Helo</a> 提供了基本的操作数据库中数据的能力，支持丰富的可组合的逻辑运算表达，你可以轻松的完成富有表达力的 queries，以实现通过对象化的 API 来构建你想要的 SQL 语句(DML 和 DQL)的能力。</p>
+<p>下面示例基本的增删改查的操作。</p>
+<h2 id="增">增</h2>
+<p>使用 <a href="https://github.com/at7h/helo">helo</a> 你可以有多种插入数据的方式选择，我们从创建一个 User 对象开始:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">user <span style="color:#719e07">=</span> User(name<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;at7h&#39;</span>, password<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;1111&#39;</span>)
+<span style="color:#719e07">print</span>(user<span style="color:#719e07">.</span>name, user<span style="color:#719e07">.</span>password)  <span style="color:#586e75"># at7h, 1111</span>
+<span style="color:#586e75"># Now user.id is None, because it is not saved to the database</span>
+<span style="color:#719e07">assert</span> user<span style="color:#719e07">.</span>id <span style="color:#719e07">is</span> <span style="color:#268bd2">None</span>
+</code></pre></div><p>此时的 user 仅是内存中的一个对象，你需要通过 <code>save</code> 方法持久化到数据库中：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">user_id <span style="color:#719e07">=</span> await user<span style="color:#719e07">.</span>save()
+<span style="color:#719e07">assert</span> user_id <span style="color:#719e07">==</span> user<span style="color:#719e07">.</span>id <span style="color:#719e07">==</span> <span style="color:#2aa198">1</span>
+</code></pre></div><p>我们可以修改它，并保存更改：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">user<span style="color:#719e07">.</span>name <span style="color:#719e07">=</span> <span style="color:#2aa198">&#39;at8h&#39;</span>
+user<span style="color:#719e07">.</span>email <span style="color:#719e07">=</span> <span style="color:#2aa198">&#39;g@at7h.com&#39;</span>
+user_id <span style="color:#719e07">=</span> await user<span style="color:#719e07">.</span>save()
+<span style="color:#719e07">assert</span> user_id <span style="color:#719e07">==</span> user<span style="color:#719e07">.</span>id <span style="color:#719e07">==</span> <span style="color:#2aa198">1</span>
+</code></pre></div><blockquote>
+<p>请注意： 目前 <code>save</code> 操作是通过 MySQL <code>REPLACE</code> 语句实现，其根据对象的 PRIMARY KEY 属性或 UNIQUE KEY 属性的值来决定是否插入新行，请谨慎使用！该实现计划在后续版本中优化。</p>
+</blockquote>
+<p>推荐使用下面几种方式来插入数据。</p>
+<p>方法 <code>add</code>, <code>madd</code> 可以用来添加单条或多条数据，它们是 <code>insert</code>, <code>minsert</code> 的简单快捷方式：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">user_id <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>add(name<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;bobo&#39;</span>, password<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;2222&#39;</span>)
+<span style="color:#586e75"># Or: user_id = await User.add({&#39;name&#39;: &#39;bobo&#39;, &#39;password&#39;: &#39;2222&#39;})</span>
+<span style="color:#719e07">print</span>(user_id)  <span style="color:#586e75"># 2</span>
+
+users <span style="color:#719e07">=</span> [{<span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;mingz&#39;</span>, <span style="color:#2aa198">&#39;password&#39;</span>: <span style="color:#2aa198">&#39;3333&#39;</span>},
+         {<span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;xy69z&#39;</span>, <span style="color:#2aa198">&#39;password&#39;</span>: <span style="color:#2aa198">&#39;4444&#39;</span>}]
+<span style="color:#586e75"># Or using user object list:</span>
+<span style="color:#586e75"># users = [User(name=&#39;mingz&#39;, password=&#39;3333&#39;),</span>
+<span style="color:#586e75">#          User(name=&#39;xy69z&#39;, password=&#39;4444&#39;)]</span>
+count <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>madd(users)
+<span style="color:#719e07">print</span>(count)  <span style="color:#586e75"># 2</span>
+</code></pre></div><p>方法 <code>insert</code> 和 <code>minsert</code> 是最正确的数据插入姿势，它们可以胜任多种数据形式，它们将返回一个 <code>Insert</code> 对象，要执行此操作，请不要忘了写 <code>do()</code> 哦 😉：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">ret <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>insert(name<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;poper&#39;</span>, password<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;5555&#39;</span>)<span style="color:#719e07">.</span>do()
+<span style="color:#586e75"># Or: ret = await User.insert({&#39;name&#39;: &#39;bingo&#39;, &#39;password&#39;: &#39;8888&#39;}).do()</span>
+<span style="color:#719e07">assert</span> ret<span style="color:#719e07">.</span>affected <span style="color:#719e07">==</span> <span style="color:#2aa198">1</span>
+<span style="color:#719e07">assert</span> ret<span style="color:#719e07">.</span>last_id <span style="color:#719e07">==</span> <span style="color:#2aa198">5</span>
+<span style="color:#719e07">print</span>(ret)  <span style="color:#586e75"># (1, 5)</span>
+
+<span style="color:#586e75"># Inserting multiple</span>
+employees <span style="color:#719e07">=</span> [
+    {<span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;at7h&#39;</span>, <span style="color:#2aa198">&#39;department&#39;</span>: <span style="color:#2aa198">1</span>},
+    {<span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;bobo&#39;</span>, <span style="color:#2aa198">&#39;department&#39;</span>: <span style="color:#2aa198">2</span>},
+]
+ret <span style="color:#719e07">=</span> await Employee<span style="color:#719e07">.</span>minsert(employees)<span style="color:#719e07">.</span>do()
+<span style="color:#719e07">print</span>(ret)  <span style="color:#586e75"># (2, 1)</span>
+
+<span style="color:#586e75"># Specify row tuples columns the tuple values correspond to</span>
+posts <span style="color:#719e07">=</span> [
+    (<span style="color:#2aa198">&#39;post1&#39;</span>, <span style="color:#2aa198">1</span>),
+    (<span style="color:#2aa198">&#39;post2&#39;</span>, <span style="color:#2aa198">2</span>),
+]
+ret <span style="color:#719e07">=</span> await Post<span style="color:#719e07">.</span>minsert(
+    posts, columns<span style="color:#719e07">=</span>[Post<span style="color:#719e07">.</span>title, Post<span style="color:#719e07">.</span>author]
+)<span style="color:#719e07">.</span>do()
+<span style="color:#719e07">print</span>(ret)  <span style="color:#586e75"># (2, 1)</span>
+</code></pre></div><p>使用 <code>insert_from</code> 支持表间数据填充：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">select <span style="color:#719e07">=</span> User<span style="color:#719e07">.</span>select(User<span style="color:#719e07">.</span>name)<span style="color:#719e07">.</span>where(User<span style="color:#719e07">.</span>id<span style="color:#719e07">.</span>in_([<span style="color:#2aa198">3</span>, <span style="color:#2aa198">4</span>, <span style="color:#2aa198">5</span>]))
+ret <span style="color:#719e07">=</span> await Employee<span style="color:#719e07">.</span>insert_from(select, [Employee<span style="color:#719e07">.</span>name])<span style="color:#719e07">.</span>do()
+<span style="color:#719e07">print</span>(ret)  <span style="color:#586e75"># (3, 3)</span>
+</code></pre></div><h2 id="查">查</h2>
+<p><a href="https://github.com/at7h/helo">Helo</a> 也有多种获取数据的方式选择，如简单获取单条数据可以使用 <code>get</code> 方法：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#586e75"># By id</span>
+user <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>get(<span style="color:#2aa198">1</span>)
+<span style="color:#719e07">assert</span> <span style="color:#b58900">isinstance</span>(user, User)
+<span style="color:#719e07">print</span>(user<span style="color:#719e07">.</span>id, user<span style="color:#719e07">.</span>name, user<span style="color:#719e07">.</span>password)  <span style="color:#586e75"># 1, at7h, 1111</span>
+
+<span style="color:#586e75"># Or by query</span>
+<span style="color:#719e07">assert</span> (await User<span style="color:#719e07">.</span>get(User<span style="color:#719e07">.</span>name <span style="color:#719e07">==</span> user<span style="color:#719e07">.</span>name)) <span style="color:#719e07">==</span> user
+</code></pre></div><p>获取多条数据可以使用 <code>mget</code> 方法：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#586e75"># By id list</span>
+uid_list <span style="color:#719e07">=</span> [<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>, <span style="color:#2aa198">3</span>]
+users <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>mget(uid_list)
+<span style="color:#719e07">print</span>(users<span style="color:#719e07">.</span>count)  <span style="color:#586e75"># 3</span>
+<span style="color:#719e07">print</span>(users)  <span style="color:#586e75"># [&lt;User object at 1&gt;, &lt;User object at 2&gt;, &lt;User object at 3&gt;]</span>
+<span style="color:#586e75"># Specify columns</span>
+users <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>mget(uid_list, columns<span style="color:#719e07">=</span>[User<span style="color:#719e07">.</span>id, User<span style="color:#719e07">.</span>name])
+<span style="color:#719e07">assert</span> users[<span style="color:#2aa198">0</span>]<span style="color:#719e07">.</span>password <span style="color:#719e07">is</span> <span style="color:#268bd2">None</span>
+
+<span style="color:#586e75"># Or by query</span>
+users <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>mget((User<span style="color:#719e07">.</span>id <span style="color:#719e07">&lt;</span> <span style="color:#2aa198">2</span>) <span style="color:#719e07">|</span> (User<span style="color:#719e07">.</span>name <span style="color:#719e07">==</span> <span style="color:#2aa198">&#39;mingz&#39;</span>))
+<span style="color:#719e07">print</span>(users)  <span style="color:#586e75"># [&lt;User object at 1&gt;, &lt;User object at 3&gt;]</span>
+</code></pre></div><p>同样的，方法 <code>get</code> 和 <code>mget</code> 也是 <code>select</code> 的简单快捷版本，其只适合于已知主键或查询条件比较简单的场景，更多的时候我们还是需要使用 <code>select</code>。</p>
+<p><strong>使用 <code>select</code> 方法可以帮助你以对象化 API 的方式轻松的构造你的 DQL，其支持丰富的可组合的逻辑条件表达式。</strong></p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">users <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>select()<span style="color:#719e07">.</span>order_by(
+    User<span style="color:#719e07">.</span>id<span style="color:#719e07">.</span>desc()
+)<span style="color:#719e07">.</span>limit(<span style="color:#2aa198">3</span>)<span style="color:#719e07">.</span>offset(<span style="color:#2aa198">2</span>)<span style="color:#719e07">.</span>all()
+<span style="color:#719e07">print</span>(users) <span style="color:#586e75"># [&lt;User object at 5&gt;, &lt;User object at 4&gt;, &lt;User object at 3&gt;]</span>
+</code></pre></div><blockquote>
+<p>方法 <code>all()</code> 以及下面提到的 <code>get()</code>, <code>first()</code>, <code>rows()</code>, <code>paginate()</code> 等方法类似于上面提到的 <code>do()</code>，都用于驱动执行此次查询，不要忘了哦。</p>
+</blockquote>
+<p>比如我需要知道有没有使用 gmail 邮箱的用户：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">is_exist <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>select()<span style="color:#719e07">.</span>where(
+    User<span style="color:#719e07">.</span>email<span style="color:#719e07">.</span>endswith(<span style="color:#2aa198">&#39;gmail.com&#39;</span>)
+)<span style="color:#719e07">.</span>exist()
+<span style="color:#719e07">print</span>(is_exist)  <span style="color:#586e75"># False</span>
+</code></pre></div><p>比如我想知道 2019 年 7 月以来共新增了多少用户：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">user_count <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>select()<span style="color:#719e07">.</span>where(
+    User<span style="color:#719e07">.</span>create_at <span style="color:#719e07">&gt;</span> datetime(<span style="color:#2aa198">2019</span>, <span style="color:#2aa198">7</span>, <span style="color:#2aa198">1</span>)
+)<span style="color:#719e07">.</span>count()
+<span style="color:#719e07">print</span>(user_count)  <span style="color:#586e75"># 4</span>
+</code></pre></div><p>再比如我们需要分页的获取今年写了 Python(title) 相关文章的用户：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">users <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>select()<span style="color:#719e07">.</span>where(
+    User<span style="color:#719e07">.</span>id<span style="color:#719e07">.</span>in_(
+        Post<span style="color:#719e07">.</span>select(Post<span style="color:#719e07">.</span>author)<span style="color:#719e07">.</span>where(
+            Post<span style="color:#719e07">.</span>update_at <span style="color:#719e07">&gt;</span> datetime(<span style="color:#2aa198">2019</span>, <span style="color:#2aa198">1</span>, <span style="color:#2aa198">1</span>),
+            Post<span style="color:#719e07">.</span>title<span style="color:#719e07">.</span>contains(<span style="color:#2aa198">&#39;Python&#39;</span>)
+        )<span style="color:#719e07">.</span>order_by(
+            Post<span style="color:#719e07">.</span>update_at<span style="color:#719e07">.</span>desc()
+        )
+    )
+)<span style="color:#719e07">.</span>paginate(<span style="color:#2aa198">1</span>, <span style="color:#2aa198">10</span>)
+<span style="color:#719e07">print</span>(users)  <span style="color:#586e75"># [&lt;User object at 1&gt;]</span>
+</code></pre></div><p>再比如我们想知道每个用户都写了多少篇文章：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">user_posts <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>select(
+    User<span style="color:#719e07">.</span>name, helo<span style="color:#719e07">.</span>F<span style="color:#719e07">.</span>COUNT(helo<span style="color:#719e07">.</span>SQL(<span style="color:#2aa198">&#39;1&#39;</span>))<span style="color:#719e07">.</span>as_(<span style="color:#2aa198">&#39;posts&#39;</span>)
+)<span style="color:#719e07">.</span>join(
+    Post, helo<span style="color:#719e07">.</span>JOINTYPE<span style="color:#719e07">.</span>LEFT, on<span style="color:#719e07">=</span>(User<span style="color:#719e07">.</span>id <span style="color:#719e07">==</span> Post<span style="color:#719e07">.</span>author)
+)<span style="color:#719e07">.</span>group_by(
+    User<span style="color:#719e07">.</span>name
+)<span style="color:#719e07">.</span>rows(<span style="color:#2aa198">100</span>)
+<span style="color:#719e07">print</span>(user_posts)  <span style="color:#586e75"># [{&#39;name&#39;: &#39;at7h&#39;, &#39;posts&#39;: 1}]</span>
+</code></pre></div><p>如上所示，我们可以通过 <code>helo.F</code> 来使用 SQL 函数，比如我需要计算出每个月所有雇员薪资的总和：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">salary_sum <span style="color:#719e07">=</span> await Employee<span style="color:#719e07">.</span>select(
+    helo<span style="color:#719e07">.</span>F<span style="color:#719e07">.</span>SUM(Employee<span style="color:#719e07">.</span>salary)<span style="color:#719e07">.</span>as_(<span style="color:#2aa198">&#39;salary_sum&#39;</span>)
+)<span style="color:#719e07">.</span>scalar()
+<span style="color:#719e07">print</span>(salary_sum)  <span style="color:#586e75"># 30000.0</span>
+</code></pre></div><h2 id="改">改</h2>
+<p>接下来，让我们尝试对数据库中的数据做一些修改操作。</p>
+<p>比如你要更改某一位雇员的薪资 😋：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">ret <span style="color:#719e07">=</span> await Employee<span style="color:#719e07">.</span>update(salary<span style="color:#719e07">=</span><span style="color:#2aa198">20000</span>)<span style="color:#719e07">.</span>where(
+    Employee<span style="color:#719e07">.</span>name <span style="color:#719e07">==</span> <span style="color:#2aa198">&#39;at7h&#39;</span>
+)<span style="color:#719e07">.</span>do()
+<span style="color:#719e07">print</span>(ret<span style="color:#719e07">.</span>affected)  <span style="color:#586e75"># 1</span>
+</code></pre></div><p>或者，整体涨工资啦 👏：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">ret <span style="color:#719e07">=</span> await Employee<span style="color:#719e07">.</span>update(
+    salary<span style="color:#719e07">=</span>Employee<span style="color:#719e07">.</span>salary <span style="color:#719e07">+</span> <span style="color:#2aa198">1000</span>
+)<span style="color:#719e07">.</span>where(
+    (Employee<span style="color:#719e07">.</span>department<span style="color:#719e07">.</span>in_([<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>])) <span style="color:#719e07">|</span> (Employee<span style="color:#719e07">.</span>name <span style="color:#719e07">==</span> <span style="color:#2aa198">&#39;at7h&#39;</span>)
+)<span style="color:#719e07">.</span>do()
+</code></pre></div><h2 id="删">删</h2>
+<p>最后我们来尝试删除表中的数据。</p>
+<p>第一种方式，你可以使用 model 对象的 <code>remove</code> 方法来删除它对应于数据库中这一行的数据：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">user <span style="color:#719e07">=</span> User(name<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;at7h&#39;</span>, password<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;1111&#39;</span>)
+await user<span style="color:#719e07">.</span>save()
+user <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>get(user_id)
+<span style="color:#719e07">print</span>(user<span style="color:#719e07">.</span>id)  <span style="color:#586e75"># 1</span>
+await user<span style="color:#719e07">.</span>remove()
+user <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>get(user_id)
+<span style="color:#719e07">print</span>(user)  <span style="color:#586e75"># None</span>
+</code></pre></div><p>另一种更为通常的方式是使用 <code>delete</code> 方法：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">ret <span style="color:#719e07">=</span> await Post<span style="color:#719e07">.</span>delete()<span style="color:#719e07">.</span>where(
+    Post<span style="color:#719e07">.</span>create_at <span style="color:#719e07">&lt;</span> datetime(<span style="color:#2aa198">2010</span>, <span style="color:#2aa198">1</span>, <span style="color:#2aa198">1</span>)
+)<span style="color:#719e07">.</span>limit(
+    <span style="color:#2aa198">100</span>
+)<span style="color:#719e07">.</span>do()
+</code></pre></div><blockquote>
+<p>请注意： 永远不要忘记写 <code>where</code> 子句，是不是整个表都不想要了 😟 ？</p>
+</blockquote>
+<h2 id="replace">Replace</h2>
+<p>另外，<a href="https://github.com/at7h/helo">helo</a> 支持 MySQL <code>REPLACE</code> 语句，提供了 <code>replace</code> 和 <code>mreplace</code> 两个方法，其用法与 <code>insert</code> 和 <code>minsert</code> 类似。当然，在使用它们之前你需要了解 MySQL <code>REPLACE</code> 语句的工作原理。</p>
+<h1 id="quart-应用">Quart 应用</h1>
+<p>如果你正在使用 <a href="https://github.com/pgjones/quart">quart</a>, 一个最小的应用示例是:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">import</span> quart
+<span style="color:#719e07">import</span> helo
+
+app <span style="color:#719e07">=</span> quart<span style="color:#719e07">.</span>Quart(__name__)
+app<span style="color:#719e07">.</span>config[<span style="color:#2aa198">&#34;HELO_DATABASE_URL&#34;</span>] <span style="color:#719e07">=</span> <span style="color:#2aa198">&#34;mysql://user:password@127.0.0.1:3306/db&#34;</span>
+
+db <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>G(app)
+
+
+<span style="color:#268bd2">@app.route</span>(<span style="color:#2aa198">&#39;/api/users&#39;</span>)
+async <span style="color:#719e07">def</span> <span style="color:#268bd2">users</span>():
+    await User<span style="color:#719e07">.</span>insert(
+        name<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;at7h&#39;</span>, email<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;g@test.com&#39;</span>, password<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;xxxx&#39;</span>
+    )<span style="color:#719e07">.</span>do()
+    user_list <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>select()<span style="color:#719e07">.</span>all(<span style="color:#268bd2">False</span>)
+    <span style="color:#719e07">return</span> quart<span style="color:#719e07">.</span>jsonify(user_list)
+
+
+app<span style="color:#719e07">.</span>run()
+</code></pre></div><p>此时你不需要再显示的执行 <code>db.bind</code>，binding 操作将会在你应用的第一个请求之前自动完成。</p>
+<p>启动此服务:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl http://127.0.0.1:5000/api/users
+<span style="color:#719e07">[{</span><span style="color:#2aa198">&#34;email&#34;</span>:<span style="color:#2aa198">&#34;g@test.com&#34;</span>,<span style="color:#2aa198">&#34;id&#34;</span>:1,<span style="color:#2aa198">&#34;name&#34;</span>:<span style="color:#2aa198">&#34;at7h&#34;</span>,<span style="color:#2aa198">&#34;password&#34;</span>:<span style="color:#2aa198">&#34;xxxx&#34;</span><span style="color:#719e07">}]</span>
+</code></pre></div><h1 id="其他">其他</h1>
+<h2 id="model-iteration">Model Iteration</h2>
+<p><a href="https://github.com/at7h/helo">Helo</a> 中的 <code>Model</code> 和 <code>Select</code> 都支持迭代，<a href="https://github.com/at7h/helo">helo</a> 会自动帮你处理分页问题，以避免频繁的 IO 操作和过大的数据量获取。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">async <span style="color:#719e07">for</span> post <span style="color:#719e07">in</span> Post:
+    <span style="color:#719e07">print</span>(post)
+<span style="color:#586e75"># &lt;Post object at 1&gt;</span>
+<span style="color:#586e75"># &lt;Post object at 2&gt;</span>
+<span style="color:#586e75"># &lt;Post object at 3&gt;</span>
+<span style="color:#586e75"># &lt;Post object at 4&gt;</span>
+
+users <span style="color:#719e07">=</span> User<span style="color:#719e07">.</span>select()<span style="color:#719e07">.</span>where(User<span style="color:#719e07">.</span>id <span style="color:#719e07">&lt;</span> <span style="color:#2aa198">5</span>)<span style="color:#719e07">.</span>order_by(User<span style="color:#719e07">.</span>id<span style="color:#719e07">.</span>desc())
+async <span style="color:#719e07">for</span> user <span style="color:#719e07">in</span> users:
+    <span style="color:#719e07">print</span>(user)
+<span style="color:#586e75"># &lt;User object at 4&gt;</span>
+<span style="color:#586e75"># &lt;User object at 3&gt;</span>
+<span style="color:#586e75"># &lt;User object at 2&gt;</span>
+<span style="color:#586e75"># &lt;User object at 1&gt;</span>
+</code></pre></div><h2 id="row-type">Row Type</h2>
+<p>当你使用 <code>select</code> 获取数据时，<a href="https://github.com/at7h/helo">helo</a> 默认会将行数据包装成为对应的 <code>Model</code> 对象，但是，当你使用了 <code>helo.F</code> 函数和 <code>join</code> 时可能会放弃加载到 <code>Model</code> 对象而使用原始的 <code>helo.adict</code> 字典。当然，你也可以通过 <code>wrap</code> 参数来显式指定使用字典类型的 row type。<strong>在大型项目中，这可能会显著提高速度并减少内存的使用。</strong></p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">users <span style="color:#719e07">=</span> await User<span style="color:#719e07">.</span>select(User<span style="color:#719e07">.</span>id, User<span style="color:#719e07">.</span>name)<span style="color:#719e07">.</span>limit(<span style="color:#2aa198">2</span>)<span style="color:#719e07">.</span>all(wrap<span style="color:#719e07">=</span><span style="color:#268bd2">False</span>)
+<span style="color:#719e07">print</span>(users)  <span style="color:#586e75"># [{&#39;id&#39;: 1, &#39;name&#39;: &#39;at7h&#39;}, {&#39;id&#39;: 2, &#39;name&#39;: &#39;bobo&#39;}]</span>
+<span style="color:#719e07">assert</span> users[<span style="color:#2aa198">0</span>]<span style="color:#719e07">.</span>name <span style="color:#719e07">==</span> <span style="color:#2aa198">&#39;at7h&#39;</span>
+
+employee <span style="color:#719e07">=</span> await Employee<span style="color:#719e07">.</span>select()<span style="color:#719e07">.</span>order_by(
+    Employee<span style="color:#719e07">.</span>salary<span style="color:#719e07">.</span>desc()
+)<span style="color:#719e07">.</span>first(<span style="color:#268bd2">False</span>)
+<span style="color:#719e07">print</span>(employee)
+<span style="color:#586e75"># {&#39;id&#39;: 1, &#39;name&#39;: &#39;at7h&#39;, &#39;department&#39;: 1, &#39;salary&#39;: 15000.0}</span>
+</code></pre></div><h2 id="sql">SQL</h2>
+<h3 id="执行-sql">执行 SQL</h3>
+<p>有时你可能迫不得已想要执行一些原始的 SQL 语句，那么你可以使用 <code>db.raw</code> 函数来实现。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">await db<span style="color:#719e07">.</span>raw(<span style="color:#2aa198">&#34;SELECT * FROM `user` WHERE `id` &lt; </span><span style="color:#2aa198">%s</span><span style="color:#2aa198">;&#34;</span>, params<span style="color:#719e07">=</span>[<span style="color:#2aa198">10</span>])
+</code></pre></div><h3 id="查看-sql">查看 SQL</h3>
+<p>为方便调试，有时候需要查看执行的 SQL，在 <a href="https://github.com/at7h/helo">helo</a> 中，你可以:</p>
+<p>第一种方式，在初始化 <code>db</code> 时，设置 <code>debug</code> 为 <code>True</code> 即可，这样你将在日志输出中看到执行过的所有 SQL 语句。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">db <span style="color:#719e07">=</span> helo<span style="color:#719e07">.</span>G(debug<span style="color:#719e07">=</span><span style="color:#268bd2">True</span>)
+</code></pre></div><p>第二种方式主要是方便学习和调试，你可以使用 <code>repr</code> 函数(或在 REPR 环境中)和 <code>str</code> 函数来查看 <code>Insert</code>, <code>Update</code>, <code>Select</code> 等对象，我们拿上面的示例来举个例子：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> q1 <span style="color:#719e07">=</span> Employee<span style="color:#719e07">.</span>update(
+<span style="color:#719e07">...</span>     salary<span style="color:#719e07">=</span>Employee<span style="color:#719e07">.</span>salary <span style="color:#719e07">+</span> <span style="color:#2aa198">1000</span>
+<span style="color:#719e07">...</span> )<span style="color:#719e07">.</span>where(
+<span style="color:#719e07">...</span>    (Employee<span style="color:#719e07">.</span>department<span style="color:#719e07">.</span>in_([<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>])) <span style="color:#719e07">|</span> (Employee<span style="color:#719e07">.</span>name <span style="color:#719e07">==</span> <span style="color:#2aa198">&#39;at7h&#39;</span>)
+<span style="color:#719e07">...</span> )
+<span style="color:#719e07">&gt;&gt;&gt;</span> q1
+Query(UPDATE <span style="color:#586e75">`employee`</span> SET <span style="color:#586e75">`salary`</span> <span style="color:#719e07">=</span> (<span style="color:#586e75">`salary`</span> <span style="color:#719e07">+</span> <span style="color:#719e07">%</span>s) WHERE ((<span style="color:#586e75">`department`</span> IN <span style="color:#719e07">%</span>s) OR (<span style="color:#586e75">`name`</span> <span style="color:#719e07">=</span> <span style="color:#719e07">%</span>s)); <span style="color:#719e07">%</span> ((<span style="color:#2aa198">1000.0</span>,), (<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>), <span style="color:#2aa198">&#39;at7h&#39;</span>))
+
+<span style="color:#719e07">&gt;&gt;&gt;</span> q2 <span style="color:#719e07">=</span> User<span style="color:#719e07">.</span>select(
+<span style="color:#719e07">...</span>     User<span style="color:#719e07">.</span>name, helo<span style="color:#719e07">.</span>F<span style="color:#719e07">.</span>COUNT(helo<span style="color:#719e07">.</span>SQL(<span style="color:#2aa198">&#39;1&#39;</span>))<span style="color:#719e07">.</span>as_(<span style="color:#2aa198">&#39;posts&#39;</span>)
+<span style="color:#719e07">...</span> )<span style="color:#719e07">.</span>join(
+<span style="color:#719e07">...</span>     Post, helo<span style="color:#719e07">.</span>JOINTYPE<span style="color:#719e07">.</span>LEFT, on<span style="color:#719e07">=</span>(User<span style="color:#719e07">.</span>id <span style="color:#719e07">==</span> Post<span style="color:#719e07">.</span>author)
+<span style="color:#719e07">...</span> )<span style="color:#719e07">.</span>group_by(
+<span style="color:#719e07">...</span>     User<span style="color:#719e07">.</span>name
+<span style="color:#719e07">...</span> )
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">print</span>(q2)
+SELECT <span style="color:#586e75">`t1`</span><span style="color:#719e07">.</span><span style="color:#586e75">`name`</span>, COUNT(<span style="color:#2aa198">1</span>) AS <span style="color:#586e75">`posts`</span> FROM <span style="color:#586e75">`user`</span> AS <span style="color:#586e75">`t1`</span> LEFT JOIN <span style="color:#586e75">`post`</span> AS <span style="color:#586e75">`t2`</span> ON (<span style="color:#586e75">`t1`</span><span style="color:#719e07">.</span><span style="color:#586e75">`id`</span> <span style="color:#719e07">=</span> <span style="color:#586e75">`t2`</span><span style="color:#719e07">.</span><span style="color:#586e75">`author`</span>) GROUP BY <span style="color:#586e75">`t1`</span><span style="color:#719e07">.</span><span style="color:#586e75">`name`</span>; <span style="color:#719e07">%</span> ()
+</code></pre></div><p>本篇上手指南就到此结束。</p>
+<p><strong>十分欢迎大家的使用，有任何问题可随时与我交流或到 <a href="https://github.com/at7h/helo">项目仓库</a> 反馈，欢迎以任何形式提出任何问题或建议。</strong></p>
+<p>感谢 🤝</p>
+
+		</div>
+		<br>
+		
+		
+		<hr>
+			<footer class="post__footer">
+				
+<div class="post__tags tags clearfix">
+	<svg class="tags__badge icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/orm/" rel="tag">orm</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/asyncio/" rel="tag">asyncio</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/mysql/" rel="tag">MySQL</a></li>
+	</ul>
+</div>
+			</footer>
+		
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<a href="/about">
+			<img alt="关于 feileo avatar" src="https://cdn.at7h.com/img/avatar.jpg" class="avatar" height="90"
+				width="90">
+		</a>
+	</figure>
+	<div class="authorbox__header">
+		<a href="/about">
+			<span class="authorbox__name">关于 feileo</span>
+		</a>
+	</div>
+	<div class="authorbox__description">
+		You may say I&#39;m a dreamer, but I&#39;m not the only one.
+	</div>
+	<div class="authorbox__description_sub">
+		--John Winston Lennon 《Imagine》
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/posts/go-null/" rel="prev"><span class="post-nav__caption">«&thinsp;上一篇</span><p class="post-nav__post-title">Golang 零值、空值与空结构</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/posts/gc-in-py/" rel="next"><span class="post-nav__caption">下一篇&thinsp;»</span><p class="post-nav__post-title">GC 机制探究之 Python 篇</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+    <div id="utter-container"></div>
+    <script src="https://utteranc.es/client.js"
+        repo= 'feileo/feileo.github.io'
+        issue-term= "pathname"
+        theme= 'github-light'
+        crossorigin= "anonymous",
+        label='✨💬✨'
+        async>
+	</script> 
+</section>
+
+
+
+			</div>
+			
+		</div>
+		<footer class="footer">
+	<div>
+		
+		<div class="footer__copyright">
+			<div class="footer__text">
+				<p>本博客基于 <a href="https://golang.google.cn/" target="_blank"> Golang </a> + <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> +  <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> 构建</p>
+        <p>本站由 <a href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral" target="_blank"><img width="50" src="https://cdn.at7h.com/img/upyun_logo.png"></a> 提供 CDN 加速/静态资源存储服务</p>
+				<p>由 <a href="https://utteranc.es/" target="_blank"><img width="19" src="https://cdn.at7h.com/img/utteranc.png"> utterances</a> 提供评论系统</p>
+				<p>
+					<span id="busuanzi_container_site_pv">
+						本站运行自 2020-10-01,
+						累计 PV
+						1<span id="busuanzi_value_site_pv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>,
+					<span id="busuanzi_container_site_uv">
+						UV <span id="busuanzi_value_site_uv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>
+				</p>
+		<p>
+			<a target="_blank" href="/sitemap.xml">站点地图</a> &nbsp;·&nbsp; 
+			<a target="_blank" href="/index.xml" type="application/rss+xml" title="rss"> RSS 
+			</a>
+		</p>
+        <p>版权所有 &copy; 2021 at7h.com</p>
+        
+
+			</div>
+		</div>
+		<div class="footer__text__sub">
+			<a target="_blank" href="http://beian.miit.gov.cn">京 ICP 备 2020037066 号 - 1</a>
+			<br>
+			<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=61092802000118">
+				<img style="vertical-align: text-bottom;" width="18" src="https://cdn.at7h.com/img/beian.png">
+				陕公网安备 61092802000118 号
+      </a>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+</body>
+</html>

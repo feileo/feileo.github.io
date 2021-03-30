@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="baidu-site-verification" content="0iFDP8mhHL" />
+	<title>
+		
+			
+				走进 Python 类的内部 -
+			
+			feileo
+		 的博客
+	</title>
+	<script>
+		(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");
+	</script>
+	<meta name="description" content="这篇文章和大家一起聊一聊 Python 3.8 中类和对象背后的一些概念和实现原理，主要尝试解释 Python 类和对象属性的存储，函数和方法，描述器，对象内存占用的优化支持，以及继承与属性查找等相关问题 ...">
+	
+		<meta property="og:title" content="走进 Python 类的内部" />
+<meta property="og:description" content="这篇文章和大家一起聊一聊 Python 3.8 中类和对象背后的一些概念和实现原理，主要尝试解释 Python 类和对象属性的存储，函数和方法，描述器，对象内存占用的优化支持，以及继承与属性查找等相关问题 ..." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://at7h.com/posts/py-classes/" />
+<meta property="article:published_time" content="2020-09-17T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-09-17T00:00:00+00:00" />
+
+	
+	
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	
+	<link rel="shortcut icon" href="/img/favicon.ico">
+	
+		
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-155215466-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+	<link rel="stylesheet" href="/highlight/styles/atom-one-dark.css">
+
+	<script src="/js/jquery.min.js"></script>
+	<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+	<script src="/highlight/highlight.pack.js" type='text/javascript'></script>
+	
+	<script type="text/javascript">
+	$(document).ready(function(){
+    hljs.initHighlightingOnLoad();
+		
+	});
+
+	(function(){
+		var bp = document.createElement('script');
+		var curProtocol = window.location.protocol.split(':')[0];
+		if (curProtocol === 'https') {
+			bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+		}
+		else {
+			bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+		}
+		var s = document.getElementsByTagName("script")[0];
+		s.parentNode.insertBefore(bp, s);
+  	})();
+	</script>
+</head>
+
+<body class="body">
+	<div class="container container--outer">
+		<header class="header">
+    <div class="container">
+        <div class="logo">
+            <a class="logo__link" href="/" title="feileo" rel="home">
+              <div class="logo__title">
+								feileo  
+							</div>
+							
+							<div class="logo__tagline">关注互联网开发技术，记录、总结与分享 👣</div>
+							
+						</a>
+						
+        </div>
+        
+
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1"><svg t="1571404030009" class="meta__icon icon icon-list" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1829" width="20" height="20"><path d="M892.928 128q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 448.512q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 769.024q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0z" p-id="1830" fill="#1e90ff"></path></svg></span>
+	</button>
+	<mul class="menu__list">
+		
+		<li class="menu__item">
+			<a class="menu__link__home" href="/"><svg t="1571149675735" class="meta__icon icon icon-home" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3856" width="22" height="22"><path d="M230.4 992c-64 0-115.2-51.2-115.2-115.2L115.2 544 76.8 582.4C70.4 588.8 57.6 595.2 44.8 595.2c-12.8 0-25.6-6.4-32-12.8C6.4 569.6 0 556.8 0 544 0 537.6 6.4 524.8 12.8 512l467.2-467.2C486.4 38.4 499.2 32 512 32s25.6 6.4 32 12.8L1011.2 512C1017.6 524.8 1024 537.6 1024 544c0 12.8-6.4 25.6-12.8 32-6.4 6.4-19.2 12.8-32 12.8s-25.6-6.4-32-12.8L512 147.2 211.2 448l0 422.4c0 12.8 12.8 25.6 25.6 25.6l115.2 0 0-185.6c0-25.6 19.2-44.8 44.8-44.8l230.4 0c25.6 0 44.8 19.2 44.8 44.8s-19.2 44.8-44.8 44.8L441.6 755.2l0 185.6c0 25.6-19.2 44.8-44.8 44.8L230.4 985.6zM627.2 992c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8l160 0c12.8 0 25.6-12.8 25.6-25.6l0-256c0-25.6 19.2-44.8 44.8-44.8 25.6 0 44.8 19.2 44.8 44.8l0 256c0 64-51.2 115.2-115.2 115.2L627.2 992z" p-id="3857" fill="#ffffff"></path></svg></a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/python">Python</a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/golang">Golang</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/vim">Vim</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link" href="/categories/tool">效率工具</a>
+			
+		</li>
+		
+		
+		
+		
+		
+	</mul>
+</nav>
+
+    </div>
+</header>
+
+
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<div class="post__title">走进 Python 类的内部</div>
+			<div class="post__meta meta">
+					
+<div class="meta__item-categories meta__item">
+	<svg t="1571148699121" class="meta__icon icon icon-category" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5705" width="16" height="16"><path d="M853.333333 938.666667 42.666667 938.666667c-25.6 0-42.666667-17.066667-42.666667-42.666667L0 128c0-25.6 17.066667-42.666667 42.666667-42.666667l298.666667 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 42.666667 469.333333 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 170.666667c0 25.6-17.066667 42.666667-42.666667 42.666667s-42.666667-17.066667-42.666667-42.666667L810.666667 256 341.333333 256C315.733333 256 298.666667 238.933333 298.666667 213.333333L298.666667 170.666667 85.333333 170.666667l0 682.666667 768 0c25.6 0 42.666667 17.066667 42.666667 42.666667S878.933333 938.666667 853.333333 938.666667z" p-id="5706" fill="#515151"></path><path d="M853.333333 938.666667 42.666667 938.666667c-12.8 0-25.6-4.266667-34.133333-17.066667S0 900.266667 0 887.466667l128-512C132.266667 354.133333 149.333333 341.333333 170.666667 341.333333l810.666667 0c12.8 0 25.6 4.266667 34.133333 17.066667S1024 379.733333 1024 392.533333l-128 512C891.733333 925.866667 874.666667 938.666667 853.333333 938.666667zM98.133333 853.333333l721.066667 0 106.666667-426.666667L204.8 426.666667 98.133333 853.333333z" p-id="5707" fill="#515151"></path></svg>
+	<span class="meta__text">
+		
+		<a class="meta__link" href="/categories/python" rel="category">
+			
+			Python
+			
+		</a>
+		
+	</span>
+</div>
+
+<div class="meta__item-datetime meta__item">
+	<svg t="1571148896140" class="meta__icon icon icon-date" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8190" width="16" height="16"><path d="M883.278513 148.539035l-43.016723 0 0-12.780071c0-38.310537-31.199583-69.632917-69.323878-69.632917l-1.02433 0c-38.129412 0-69.323878 31.321356-69.323878 69.632917l0 12.780071L317.20292 148.539035l0-12.780071c0-38.310537-31.195489-69.632917-69.323878-69.632917l-1.055029 0c-38.127366 0-69.322855 31.321356-69.322855 69.632917l0 12.780071-42.924625 0c-38.127366 0-69.323878 31.351032-69.323878 69.609381l0 665.701614c0 38.309514 31.195489 69.632917 69.323878 69.632917l748.70198 0c38.127366 0 69.322855-31.323403 69.322855-69.632917l0-665.701614C952.601368 179.890067 921.405879 148.539035 883.278513 148.539035L883.278513 148.539035zM728.318232 135.758963c0-23.024389 18.632359-41.777499 41.594327-41.777499l1.02433 0c22.931269 0 41.593304 18.753109 41.593304 41.777499L812.530193 259.615852c0 23.024389-18.662035 41.778522-41.593304 41.778522l-1.02433 0c-22.961968 0-41.594327-18.754133-41.594327-41.778522L728.318232 135.758963 728.318232 135.758963zM205.23071 135.758963c0-23.024389 18.632359-41.777499 41.599444-41.777499l1.048889 0c22.903639 0 41.594327 18.753109 41.594327 41.777499L289.473369 259.615852c0 23.024389-18.691711 41.778522-41.594327 41.778522l-1.048889 0c-22.967084 0-41.599444-18.754133-41.599444-41.778522L205.23071 135.758963 205.23071 135.758963zM883.278513 897.807926l-748.70198 0c-7.519254 0-13.864776-6.468318-13.864776-13.957897L120.711757 394.394489l776.433578 0 0 489.455541C897.144312 891.338584 890.797767 897.807926 883.278513 897.807926L883.278513 897.807926zM222.614635 494.083955l127.918391 0 0 62.950727L222.614635 557.034682 222.614635 494.083955 222.614635 494.083955zM445.963493 494.083955l126.906342 0 0 62.950727L445.963493 557.034682 445.963493 494.083955 445.963493 494.083955zM668.299277 494.083955l124.873032 0 0 62.950727L668.299277 557.034682 668.299277 494.083955 668.299277 494.083955zM222.614635 622.00951l127.918391 0 0 61.927421L222.614635 683.936931 222.614635 622.00951 222.614635 622.00951zM445.963493 622.00951l126.906342 0 0 61.927421L445.963493 683.936931 445.963493 622.00951 445.963493 622.00951zM668.299277 622.00951l124.873032 0 0 61.927421L668.299277 683.936931 668.299277 622.00951 668.299277 622.00951zM222.614635 746.884588l127.918391 0 0 64.97278L222.614635 811.857369 222.614635 746.884588 222.614635 746.884588zM445.963493 746.884588l126.906342 0 0 64.97278L445.963493 811.857369 445.963493 746.884588 445.963493 746.884588zM668.299277 746.884588l124.873032 0 0 64.97278L668.299277 811.857369 668.299277 746.884588 668.299277 746.884588zM668.299277 746.884588" p-id="8191" fill="#515151"></path></svg>
+	更新于 <time class="meta__text" datetime="2020-09-17T00:00:00">2020-09-17</time>
+</div>
+
+<div class="meta__item-word_count meta__item">
+	<svg t="1571149110363" class="meta__icon icon icon-wordcount" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1792" width="16" height="16"><path d="M286.722048 405.987328l0 477.058048-132.51584 0L154.206208 405.987328 286.722048 405.987328M313.22624 352.980992 127.70304 352.980992c-14.636032 0-26.503168 11.867136-26.503168 26.503168L101.199872 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.5232 0c14.636032 0 26.503168-11.867136 26.503168-26.503168L339.729408 379.483136C339.729408 364.847104 327.862272 352.980992 313.22624 352.980992L313.22624 352.980992zM577.998848 563.557376l0 319.488L445.476864 883.045376l0-319.488L577.998848 563.557376M604.502016 510.543872l-185.52832 0c-14.636032 0-26.503168 11.859968-26.503168 26.510336L392.470528 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.52832 0c14.623744 0 26.504192-11.867136 26.504192-26.503168L631.006208 537.054208c0-14.623744-11.880448-26.497024-26.504192-26.497024l0 0L604.502016 510.543872zM869.792768 140.954624l0 742.090752L737.5104 883.045376l0-742.090752L869.792768 140.954624M896.29696 87.948288 711.007232 87.948288c-14.649344 0-26.503168 11.867136-26.503168 26.503168L684.504064 909.54752c0 14.636032 11.853824 26.503168 26.503168 26.503168L896.29696 936.050688c14.636032 0 26.503168-11.867136 26.503168-26.503168l0-795.096064C922.800128 99.815424 910.932992 87.948288 896.29696 87.948288L896.29696 87.948288z" p-id="1793" fill="#515151"></path></svg>
+    约 <span class="meta__text">3561</span> 个字
+</div>
+
+<div class="meta__item-reading_time meta__item">
+	<svg t="1571149199980" class="meta__icon icon icon-time" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2748" width="16" height="16"><path d="M512 64C264.96 64 64 264.96 64 512s200.96 448 448 448 448-200.96 448-448S759.04 64 512 64zM512 895.712c-211.584 0-383.712-172.16-383.712-383.712C128.288 300.416 300.416 128.288 512 128.288c211.552 0 383.712 172.128 383.712 383.712C895.712 723.552 723.552 895.712 512 895.712z" p-id="2749" fill="#515151"></path><path d="M671.968 512 512 512 512 288.064c0-17.76-14.24-32.128-32-32.128s-32 14.4-32 32.128L448 544c0 17.76 14.272 32 32 32l191.968 0c17.76 0 32.128-14.24 32.128-32S689.728 512 671.968 512z" p-id="2750" fill="#515151"></path></svg>    
+    阅读约需 <span class="meta__text">
+        
+            8
+         m</span>
+</div>
+
+						<div class="meta__item-page_pv meta__item">
+    
+    <span class="meta__text">
+        <span id="busuanzi_container_page_pv">
+            
+        </span>
+    </span>
+</div>
+				</div>
+		</header>
+		<div class="content post__content clearfix">
+			<p>这篇文章和大家一起聊一聊 Python 3.8 中类和对象背后的一些概念和实现原理，主要尝试解释 Python 类和对象属性的存储，函数和方法，描述器，对象内存占用的优化支持，以及继承与属性查找等相关问题。</p>
+<p>让我们从一个简单的例子开始：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">class</span> <span style="color:#268bd2">Employee</span>:
+
+    outsource <span style="color:#719e07">=</span> <span style="color:#268bd2">False</span>
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, department, name):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>department <span style="color:#719e07">=</span> department
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>name <span style="color:#719e07">=</span> name
+
+    <span style="color:#268bd2">@property</span>
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">inservice</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">return</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>department <span style="color:#719e07">is</span> <span style="color:#719e07">not</span> <span style="color:#268bd2">None</span>
+
+    <span style="color:#719e07">def</span> __repr__(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">return</span> f<span style="color:#2aa198">&#34;&lt;Employee: {self.department}-{self.name}&gt;&#34;</span>
+
+employee <span style="color:#719e07">=</span> Employee(<span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;bobo&#39;</span>)
+</code></pre></div><p><code>employee</code> 对象是 <code>Employee</code> 类的一个实例，它有两个属性 <code>department</code> 和 <code>name</code>，其值属于该实例。<code>outsource</code> 是类属性，所有者是类，该类的所有实例对象共享此属性值，这跟其他面向对象语言一致。</p>
+<p>更改类变量会影响到该类的所有实例对象：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> e1 <span style="color:#719e07">=</span> Employee(<span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;bobo&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e2 <span style="color:#719e07">=</span> Employee(<span style="color:#2aa198">&#39;HR&#39;</span>, <span style="color:#2aa198">&#39;cici&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e1<span style="color:#719e07">.</span>outsource, e2<span style="color:#719e07">.</span>outsource
+(<span style="color:#268bd2">False</span>, <span style="color:#268bd2">False</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> Employee<span style="color:#719e07">.</span>outsource <span style="color:#719e07">=</span> <span style="color:#268bd2">True</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e1<span style="color:#719e07">.</span>outsource, e2<span style="color:#719e07">.</span>outsource
+<span style="color:#719e07">&gt;&gt;&gt;</span> (<span style="color:#268bd2">True</span>, <span style="color:#268bd2">True</span>)
+</code></pre></div><p>这仅限于从类更改，当我们从实例更改类变量时：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> e1 <span style="color:#719e07">=</span> Employee(<span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;bobo&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e2 <span style="color:#719e07">=</span> Employee(<span style="color:#2aa198">&#39;HR&#39;</span>, <span style="color:#2aa198">&#39;cici&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e1<span style="color:#719e07">.</span>outsource, e2<span style="color:#719e07">.</span>outsource
+(<span style="color:#268bd2">False</span>, <span style="color:#268bd2">False</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e1<span style="color:#719e07">.</span>outsource <span style="color:#719e07">=</span> <span style="color:#268bd2">True</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e1<span style="color:#719e07">.</span>outsource, e2<span style="color:#719e07">.</span>outsource
+(<span style="color:#268bd2">True</span>, <span style="color:#268bd2">False</span>)
+</code></pre></div><p>是的，当你试图从实例对象修改类变量时，Python 不会更改该类的类变量值，而是创建一个同名的实例属性，这是非常正确且安全的。在搜索属性值时，实例变量会优先于类变量，这将在<a href="#%E7%BB%A7%E6%89%BF%E4%B8%8E%E5%B1%9E%E6%80%A7%E6%9F%A5%E6%89%BE">继承与属性查找</a>一节中详细解释。</p>
+<p>值得特别注意的是，当类变量的类型是<strong>可变类型</strong>时，你是从实例对象中更改的它们的：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">class</span> <span style="color:#268bd2">S</span>:
+<span style="color:#719e07">...</span>     L <span style="color:#719e07">=</span> [<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>]
+<span style="color:#719e07">...</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> s1, s2 <span style="color:#719e07">=</span> S(), S()
+<span style="color:#719e07">&gt;&gt;&gt;</span> s1<span style="color:#719e07">.</span>L, s2<span style="color:#719e07">.</span>L
+([<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>], [<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>])
+<span style="color:#719e07">&gt;&gt;&gt;</span> t1<span style="color:#719e07">.</span>L<span style="color:#719e07">.</span>append(<span style="color:#2aa198">3</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> t1<span style="color:#719e07">.</span>L, s2<span style="color:#719e07">.</span>L
+([<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>, <span style="color:#2aa198">3</span>], [<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>, <span style="color:#2aa198">3</span>])
+</code></pre></div><p>好的实践方式是应当尽量的避免这样的设计。</p>
+<h1 id="属性的存储">属性的存储</h1>
+<p>本小节我们一起来看看 Python 中的类属性、方法及实例属性是如何关联存储的。</p>
+<h2 id="实例属性">实例属性</h2>
+<p>在 Python 中，所有实例属性都存储在 <code>__dict__</code> 字典中，这就是一个常规的 <code>dict</code>，对于实例属性的维护即是从该字典中获取和修改，它对开发者是完全开放的。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> e <span style="color:#719e07">=</span> Employee(<span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;bobo&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>__dict__
+{<span style="color:#2aa198">&#39;department&#39;</span>: <span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;bobo&#39;</span>}
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#b58900">type</span>(e<span style="color:#719e07">.</span>__dict__)
+<span style="color:#b58900">dict</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>name <span style="color:#719e07">is</span> e<span style="color:#719e07">.</span>__dict__[<span style="color:#2aa198">&#39;name&#39;</span>]
+<span style="color:#268bd2">True</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>__dict__[<span style="color:#2aa198">&#39;department&#39;</span>] <span style="color:#719e07">=</span> <span style="color:#2aa198">&#39;HR&#39;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>department
+<span style="color:#2aa198">&#39;HR&#39;</span>
+</code></pre></div><p>正因为实例属性是采用字典来存储，所以任何时候我们都可以方便的给对象添加或删除字段：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>age <span style="color:#719e07">=</span> <span style="color:#2aa198">30</span> <span style="color:#586e75"># 并没有定义 age 属性</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>age
+<span style="color:#2aa198">30</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>__dict__
+{<span style="color:#2aa198">&#39;department&#39;</span>: <span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;bobo&#39;</span>, <span style="color:#2aa198">&#39;age&#39;</span>: <span style="color:#2aa198">30</span>}
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">del</span> e<span style="color:#719e07">.</span>age
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>__dict__
+{<span style="color:#2aa198">&#39;department&#39;</span>: <span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;d&#39;</span>}
+</code></pre></div><p>我们也可以从字典中实例化一个对象，或者通过保存实例的 <code>__dict__</code> 来恢复实例。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">def</span> <span style="color:#268bd2">new_employee_from</span>(d):
+<span style="color:#719e07">...</span>     instance <span style="color:#719e07">=</span> <span style="color:#b58900">object</span><span style="color:#719e07">.</span>__new__(Employee)
+<span style="color:#719e07">...</span>     instance<span style="color:#719e07">.</span>__dict__<span style="color:#719e07">.</span>update(d)
+<span style="color:#719e07">...</span>     <span style="color:#719e07">return</span> instance
+<span style="color:#719e07">...</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e1 <span style="color:#719e07">=</span> new_employee_from({<span style="color:#2aa198">&#39;department&#39;</span>: <span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;bobo&#39;</span>})
+<span style="color:#719e07">&gt;&gt;&gt;</span> e1
+<span style="color:#719e07">&lt;</span>Employee: IT<span style="color:#719e07">-</span>bobo<span style="color:#719e07">&gt;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> state <span style="color:#719e07">=</span> e1<span style="color:#719e07">.</span>__dict__<span style="color:#719e07">.</span>copy()
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">del</span> e1
+<span style="color:#719e07">&gt;&gt;&gt;</span> e2 <span style="color:#719e07">=</span> new_employee_from(state)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e2
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">&lt;</span>Employee: IT<span style="color:#719e07">-</span>bobo<span style="color:#719e07">&gt;</span>
+</code></pre></div><p>因为 <code>__dict__</code> 的完全开放，所以我们可以向其中添加任何 <strong>immutable</strong> 类型的 key，比如数字：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>__dict__[<span style="color:#2aa198">1</span>] <span style="color:#719e07">=</span> <span style="color:#2aa198">1</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>__dict__
+{<span style="color:#2aa198">&#39;department&#39;</span>: <span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;name&#39;</span>: <span style="color:#2aa198">&#39;bobo&#39;</span>, <span style="color:#2aa198">1</span>: <span style="color:#2aa198">1</span>}
+</code></pre></div><p>这些非字符串的字段是我们无法通过实例对象访问的，为了确保不会出现这样的情况，除非必要的情况下，一般最好不要直接对 <code>__dict__</code> 进行写操作，甚至不要直接操作 <code>__dict__</code>。</p>
+<blockquote>
+<p>所以有一种说法是 Python is a &ldquo;consenting adults language&rdquo;。</p>
+</blockquote>
+<p>这种动态的实现使得我们的代码非常灵活，很多时候非常的便利，但这也付出了存储和性能上的开销。所以 Python 也提供了另外一种机制(<code>__slots__</code>)来放弃使用 <code>__dict__</code>，以节约内存，提高性能，详见 <a href="#__slots__">__slots__</a> 一节。</p>
+<h2 id="类属性">类属性</h2>
+<p>同样的，类属性也在存储在类的 <code>__dict__</code> 字典中：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> Employee<span style="color:#719e07">.</span>__dict__
+mappingproxy({<span style="color:#2aa198">&#39;__module__&#39;</span>: <span style="color:#2aa198">&#39;__main__&#39;</span>,
+              <span style="color:#2aa198">&#39;outsource&#39;</span>: <span style="color:#268bd2">True</span>,
+              <span style="color:#2aa198">&#39;__init__&#39;</span>: <span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Employee<span style="color:#719e07">.</span>__init__(<span style="color:#268bd2">self</span>, department, name)<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;inservice&#39;</span>: <span style="color:#719e07">&lt;</span><span style="color:#b58900">property</span> at <span style="color:#2aa198">0x108419ea0</span><span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__repr__&#39;</span>: <span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Employee<span style="color:#719e07">.</span>__repr__(<span style="color:#268bd2">self</span>)<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__str__&#39;</span>: <span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Employee<span style="color:#719e07">.</span>__str__(<span style="color:#268bd2">self</span>)<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__dict__&#39;</span>: <span style="color:#719e07">&lt;</span>attribute <span style="color:#2aa198">&#39;__dict__&#39;</span> of <span style="color:#2aa198">&#39;Employee&#39;</span> objects<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__weakref__&#39;</span>: <span style="color:#719e07">&lt;</span>attribute <span style="color:#2aa198">&#39;__weakref__&#39;</span> of <span style="color:#2aa198">&#39;Employee&#39;</span> objects<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__doc__&#39;</span>: <span style="color:#268bd2">None</span>}
+
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#b58900">type</span>(Employee<span style="color:#719e07">.</span>__dict__)
+mappingproxy
+</code></pre></div><p>与实例字典的『开放』不同，类属性使用的字典是一个 <code>MappingProxyType</code> 对象，它是一个不能 <code>setattr</code> 的字典。这意味着它对开发者是只读的，其目的正是为了保证类属性的键都是字符串，以简化和加快新型类属性的查找和 <code>__mro__</code> 的搜索逻辑。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> Employee<span style="color:#719e07">.</span>__dict__[<span style="color:#2aa198">&#39;outsource&#39;</span>] <span style="color:#719e07">=</span> <span style="color:#268bd2">False</span>
+<span style="color:#cb4b16">TypeError</span>: <span style="color:#2aa198">&#39;mappingproxy&#39;</span> <span style="color:#b58900">object</span> does <span style="color:#719e07">not</span> support item assignment
+</code></pre></div><p>因为所有的方法都归属于一个类，所以它们也存储在类的字典中，从上面的例子中可以看到已有的 <code>__init__</code> 和 <code>__repr__</code> 方法。我们可以再添加几个来验证：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">class</span> <span style="color:#268bd2">Employee</span>:
+    <span style="color:#586e75"># ...</span>
+    <span style="color:#268bd2">@staticmethod</span>
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">soo</span>():
+        <span style="color:#719e07">pass</span>
+
+    <span style="color:#268bd2">@classmethod</span>
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">coo</span>(<span style="color:#268bd2">cls</span>):
+        <span style="color:#719e07">pass</span>
+
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">foo</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">pass</span>
+</code></pre></div><div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> Employee<span style="color:#719e07">.</span>__dict__
+mappingproxy({<span style="color:#2aa198">&#39;__module__&#39;</span>: <span style="color:#2aa198">&#39;__main__&#39;</span>,
+              <span style="color:#2aa198">&#39;outsource&#39;</span>: <span style="color:#268bd2">False</span>,
+              <span style="color:#2aa198">&#39;__init__&#39;</span>: <span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Employee<span style="color:#719e07">.</span>__init__(<span style="color:#268bd2">self</span>, department, name)<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__repr__&#39;</span>: <span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Employee<span style="color:#719e07">.</span>__repr__(<span style="color:#268bd2">self</span>)<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;inservice&#39;</span>: <span style="color:#719e07">&lt;</span><span style="color:#b58900">property</span> at <span style="color:#2aa198">0x108419ea0</span><span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;soo&#39;</span>: <span style="color:#719e07">&lt;</span><span style="color:#b58900">staticmethod</span> at <span style="color:#2aa198">0x1066ce588</span><span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;coo&#39;</span>: <span style="color:#719e07">&lt;</span><span style="color:#b58900">classmethod</span> at <span style="color:#2aa198">0x1066ce828</span><span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;foo&#39;</span>: <span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Employee<span style="color:#719e07">.</span>foo(<span style="color:#268bd2">self</span>)<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__dict__&#39;</span>: <span style="color:#719e07">&lt;</span>attribute <span style="color:#2aa198">&#39;__dict__&#39;</span> of <span style="color:#2aa198">&#39;Employee&#39;</span> objects<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__weakref__&#39;</span>: <span style="color:#719e07">&lt;</span>attribute <span style="color:#2aa198">&#39;__weakref__&#39;</span> of <span style="color:#2aa198">&#39;Employee&#39;</span> objects<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__doc__&#39;</span>: <span style="color:#268bd2">None</span>})
+</code></pre></div><h1 id="继承与属性查找">继承与属性查找</h1>
+<p>目前为止，我们已经知道，所有的属性和方法都存储在两个 <code>__dict__</code> 字典中，现在我们来看看 Python 是如何进行属性查找的。</p>
+<p>Python 3 中，所有类都隐式的继承自 <code>object</code>，所以总会有一个继承关系，而且 Python 是支持多继承的：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">class</span> <span style="color:#268bd2">A</span>:
+<span style="color:#719e07">...</span>     <span style="color:#719e07">pass</span>
+<span style="color:#719e07">...</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">class</span> <span style="color:#268bd2">B</span>:
+<span style="color:#719e07">...</span>     <span style="color:#719e07">pass</span>
+<span style="color:#719e07">...</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">class</span> <span style="color:#268bd2">C</span>(B):
+<span style="color:#719e07">...</span>     <span style="color:#719e07">pass</span>
+<span style="color:#719e07">...</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">class</span> <span style="color:#268bd2">D</span>(A, C):
+<span style="color:#719e07">...</span>     <span style="color:#719e07">pass</span>
+<span style="color:#719e07">...</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> D<span style="color:#719e07">.</span>mro()
+[<span style="color:#719e07">&lt;</span><span style="color:#719e07">class</span> &#39;<span style="color:#268bd2">__main__</span><span style="color:#719e07">.</span>D<span style="color:#2aa198">&#39;&gt;, &lt;class &#39;</span>__main__<span style="color:#719e07">.</span>A<span style="color:#2aa198">&#39;&gt;, &lt;class &#39;</span>__main__<span style="color:#719e07">.</span>C<span style="color:#2aa198">&#39;&gt;, &lt;class &#39;</span>__main__<span style="color:#719e07">.</span><span style="color:#2aa198">B</span><span style="color:#2aa198">&#39;&gt;, &lt;class &#39;</span><span style="color:#b58900">object</span><span style="color:#2aa198">&#39;&gt;]</span>
+</code></pre></div><p><code>mro()</code> 是一个特殊的方法，它返回类的线性解析顺序。</p>
+<p>属性访问的默认行为是从对象的字典中获取、设置或删除属性，例如对于 <code>e.f</code> 的查找简单描述是:</p>
+<blockquote>
+<p><code>e.f</code> 的查找顺序会从 <code>e.__dict__['f']</code> 开始，然后是 <code>type(e).__dict__['f']</code>，接下来依次查找 <code>type(e)</code> 的基类（<code>__mro__</code> 顺序，不包括元类）。 如果<strong>找到的值是定义了某个<u>描述器方法</u>的对象，则 Python 可能会重载默认行为并转而发起调用描述器方法</strong>。这具体发生在优先级链的哪个环节则要根据所定义的描述器方法及其被调用的方式来决定。</p>
+</blockquote>
+<p>所以，要理解查找的顺序，你必须要先了解<a href="https://docs.python.org/zh-cn/3/howto/descriptor.html#descriptor-protocol">描述器协议</a>。</p>
+<p>简单总结，有两种描述器类型：数据描述器和和非数据描述器。</p>
+<blockquote>
+<p>如果一个对象除了定义 <code>__get__()</code> 之外还定义了 <code>__set__()</code> 或 <code>__delete__()</code>，则它会被视为数据描述器。仅定义了 <code>__get__()</code> 的描述器称为非数据描述器（它们通常被用于方法，但也可以有其他用途)</p>
+</blockquote>
+<p>由于函数只实现 <code>__get__</code>，所以它们是非数据描述器。</p>
+<p>Python 的对象属性查找顺序如下：</p>
+<ol>
+<li>类和父类字典的数据描述器</li>
+<li>实例字典</li>
+<li>类和父类字典中的非数据描述器</li>
+</ol>
+<p>请记住，无论你的类有多少个继承级别，该类对象的实例字典总是存储了所有的实例变量，这也是 <code>super</code> 的意义之一。</p>
+<p>下面我们尝试用伪代码来描述查找顺序：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">def</span> <span style="color:#268bd2">get_attribute</span>(obj, name):
+    class_definition <span style="color:#719e07">=</span> obj<span style="color:#719e07">.</span>__class__
+
+    descriptor <span style="color:#719e07">=</span> <span style="color:#268bd2">None</span>
+    <span style="color:#719e07">for</span> <span style="color:#268bd2">cls</span> <span style="color:#719e07">in</span> class_definition<span style="color:#719e07">.</span>mro():
+        <span style="color:#719e07">if</span> name <span style="color:#719e07">in</span> <span style="color:#268bd2">cls</span><span style="color:#719e07">.</span>__dict__:
+            descriptor <span style="color:#719e07">=</span> <span style="color:#268bd2">cls</span><span style="color:#719e07">.</span>__dict__[name]
+            <span style="color:#719e07">break</span>
+
+    <span style="color:#719e07">if</span> <span style="color:#b58900">hasattr</span>(descriptor, <span style="color:#2aa198">&#39;__set__&#39;</span>):
+        <span style="color:#719e07">return</span> descriptor, <span style="color:#2aa198">&#39;data descriptor&#39;</span>
+
+    <span style="color:#719e07">if</span> name <span style="color:#719e07">in</span> obj<span style="color:#719e07">.</span>__dict__:
+        <span style="color:#719e07">return</span> obj<span style="color:#719e07">.</span>__dict__[name], <span style="color:#2aa198">&#39;instance attribute&#39;</span>
+
+    <span style="color:#719e07">if</span> descriptor <span style="color:#719e07">is</span> <span style="color:#719e07">not</span> <span style="color:#268bd2">None</span>:
+        <span style="color:#719e07">return</span> descriptor, <span style="color:#2aa198">&#39;non-data descriptor&#39;</span>
+    <span style="color:#719e07">else</span>:
+        <span style="color:#719e07">raise</span> <span style="color:#cb4b16">AttributeError</span>
+</code></pre></div><div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> e <span style="color:#719e07">=</span> Employee(<span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;bobo&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> get_attribute(e, <span style="color:#2aa198">&#39;outsource&#39;</span>)
+(<span style="color:#268bd2">False</span>, <span style="color:#2aa198">&#39;non-data descriptor&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>outsource <span style="color:#719e07">=</span> <span style="color:#268bd2">True</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> get_attribute(e, <span style="color:#2aa198">&#39;outsource&#39;</span>)
+(<span style="color:#268bd2">True</span>, <span style="color:#2aa198">&#39;instance attribute&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> get_attribute(e, <span style="color:#2aa198">&#39;name&#39;</span>)
+(<span style="color:#2aa198">&#39;bobo&#39;</span>, <span style="color:#2aa198">&#39;instance attribute&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> get_attribute(e, <span style="color:#2aa198">&#39;inservice&#39;</span>)
+(<span style="color:#719e07">&lt;</span><span style="color:#b58900">property</span> at <span style="color:#2aa198">0x10c966d10</span><span style="color:#719e07">&gt;</span>, <span style="color:#2aa198">&#39;data descriptor&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> get_attribute(e, <span style="color:#2aa198">&#39;foo&#39;</span>)
+(<span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Employee<span style="color:#719e07">.</span>foo(<span style="color:#268bd2">self</span>)<span style="color:#719e07">&gt;</span>, <span style="color:#2aa198">&#39;non-data descriptor&#39;</span>)
+</code></pre></div><p>由于这样的优先级顺序，所以实例是不能重载类的数据描述器属性的，比如 <code>property</code> 属性：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">class</span> <span style="color:#268bd2">Manager</span>(Employee):
+<span style="color:#719e07">...</span>     <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, <span style="color:#719e07">*</span>arg):
+<span style="color:#719e07">...</span>         <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>inservice <span style="color:#719e07">=</span> <span style="color:#268bd2">True</span>
+<span style="color:#719e07">...</span>         <span style="color:#b58900">super</span>()<span style="color:#719e07">.</span>__init__(<span style="color:#719e07">*</span>arg)
+<span style="color:#719e07">...</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> m <span style="color:#719e07">=</span> Manager(<span style="color:#2aa198">&#34;HR&#34;</span>, <span style="color:#2aa198">&#34;cici&#34;</span>)
+<span style="color:#cb4b16">AttributeError</span>: can<span style="color:#2aa198">&#39;t set attribute</span>
+</code></pre></div><h2 id="发起描述器调用">发起描述器调用</h2>
+<p>上面讲到，在查找属性时，如果找到的值是定义了某个描述器方法的对象，则 Python 可能会重载默认行为并转而发起描述器方法调用。</p>
+<p>描述器的作用就是绑定对象属性，我们假设 <code>a</code> 是一个实现了描述器协议的对象，对 <code>e.a</code> 发起描述器调用有以下几种情况：</p>
+<ul>
+<li>直接调用：用户级的代码直接调用<code>e.__get__(a)</code>，不常用</li>
+<li>实例绑定：绑定到一个实例，<code>e.a</code> 会被转换为调用: <code>type(e).__dict__['a'].__get__(e, type(e))</code></li>
+<li>类绑定：绑定到一个类，<code>E.a</code> 会被转换为调用: <code>E.__dict__['a'].__get__(None, E)</code></li>
+</ul>
+<p>在继承关系中进行绑定时，会根据以上情况和 <code>__mro__</code> 顺序来发起链式调用。</p>
+<h1 id="函数与方法">函数与方法</h1>
+<p>我们知道<u><strong>方法是属于特定类的函数</strong></u>，唯一的不同(如果可以算是不同的话)是方法的第一个参数往往是为类或实例对象保留的，在 Python 中，我们约定为 <code>cls</code> 或 <code>self</code>, 当然你也可以取任何名字如 <code>this</code>(只是最好不要这样做)。</p>
+<p>上一节我们知道，函数实现了 <code>__get__()</code> 方法的对象，所以它们是非数据描述器。在 Python 访问(调用)方法支持中正是通过调用 <code>__get__()</code> 将调用的函数绑定成方法的。</p>
+<p>在纯 Python 中，它的工作方式如下(示例来自<a href="https://docs.python.org/zh-cn/3/howto/descriptor.html">描述器使用指南</a>):</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">class</span> <span style="color:#268bd2">Function</span>:
+    <span style="color:#719e07">def</span> __get__(<span style="color:#268bd2">self</span>, obj, objtype<span style="color:#719e07">=</span><span style="color:#268bd2">None</span>):
+        <span style="color:#719e07">if</span> obj <span style="color:#719e07">is</span> <span style="color:#268bd2">None</span>:
+            <span style="color:#719e07">return</span> <span style="color:#268bd2">self</span>
+        <span style="color:#719e07">return</span> types<span style="color:#719e07">.</span>MethodType(<span style="color:#268bd2">self</span>, obj) <span style="color:#586e75"># 将函数绑定为方法</span>
+</code></pre></div><p>在 Python 2 中，有两种方法: unbound method 和 bound method，在 Python 3 中只有后者。</p>
+<p>bound method 与它们绑定的类或实例数据相关联：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> Employee<span style="color:#719e07">.</span>coo
+<span style="color:#719e07">&lt;</span>bound method Employee<span style="color:#719e07">.</span>coo of <span style="color:#719e07">&lt;</span><span style="color:#719e07">class</span> &#39;<span style="color:#268bd2">__main__</span><span style="color:#719e07">.</span>Employee<span style="color:#2aa198">&#39;&gt;&gt;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> Employee<span style="color:#719e07">.</span>foo
+<span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Employee<span style="color:#719e07">.</span>foo(<span style="color:#268bd2">self</span>)<span style="color:#719e07">&gt;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e <span style="color:#719e07">=</span> Employee(<span style="color:#2aa198">&#39;IT&#39;</span>, <span style="color:#2aa198">&#39;bobo&#39;</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>foo
+<span style="color:#719e07">&lt;</span>bound method Employee<span style="color:#719e07">.</span>foo of <span style="color:#719e07">&lt;</span>Employee: IT<span style="color:#719e07">-</span>bobo<span style="color:#719e07">&gt;&gt;</span>
+</code></pre></div><p>我们可以从<strong>方法</strong>来访问实例与类：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>foo<span style="color:#719e07">.</span>__self__
+<span style="color:#719e07">&lt;</span>Employee: IT<span style="color:#719e07">-</span>bobo<span style="color:#719e07">&gt;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> e<span style="color:#719e07">.</span>foo<span style="color:#719e07">.</span>__self__<span style="color:#719e07">.</span>__class__
+__main__<span style="color:#719e07">.</span>Employee
+</code></pre></div><p>借助描述符协议，我们可以在类的外部作用域手动绑定一个函数到方法，以访问类或实例中的数据，<strong>我将以这个示例来解释当你的对象访问(调用)类字典中存储的函数时将其绑定成方法(执行)的过程</strong>：</p>
+<p>现有以下函数：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> <span style="color:#719e07">def</span> <span style="color:#268bd2">f1</span>(<span style="color:#268bd2">self</span>):
+<span style="color:#719e07">...</span>     <span style="color:#719e07">if</span> <span style="color:#b58900">isinstance</span>(<span style="color:#268bd2">self</span>, <span style="color:#b58900">type</span>):
+<span style="color:#719e07">...</span>         <span style="color:#719e07">return</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>outsource
+<span style="color:#719e07">...</span>     <span style="color:#719e07">return</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>name
+<span style="color:#719e07">...</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> bound_f1 <span style="color:#719e07">=</span> f1<span style="color:#719e07">.</span>__get__(e, Employee) <span style="color:#586e75"># or bound_f1 = f1.__get__(e)</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> bound_f1
+<span style="color:#719e07">&lt;</span>bound method f1 of <span style="color:#719e07">&lt;</span>Employee: IT<span style="color:#719e07">-</span>bobo<span style="color:#719e07">&gt;&gt;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> bound_f1<span style="color:#719e07">.</span>__self__
+<span style="color:#719e07">&lt;</span>Employee: IT<span style="color:#719e07">-</span>bobo<span style="color:#719e07">&gt;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> bound_f1()
+<span style="color:#2aa198">&#39;bobo&#39;</span>
+</code></pre></div><p>总结一下：当我们调用 <code>e.foo()</code> 时，首先从 <code>Employee.__dict__['foo']</code> 中得到 <code>foo</code> 函数，在调用该函数的 <code>foo</code> 方法 <code>foo.__get__(e)</code> 将其转换成方法，然后执行 <code>foo()</code> 获得结果。这就完成了 <code>e.foo()</code> -&gt; <code>f(e)</code> 的过程。</p>
+<p>如果你对我的解释感到疑惑，我建议你可以阅读官方的<a href="https://docs.python.org/zh-cn/3/howto/descriptor.html">描述器使用指南</a>以进一步了解描述器协议，在该文的<a href="https://docs.python.org/zh-cn/3/howto/descriptor.html#functions-and-methods">函数和方法</a>和<a href="https://docs.python.org/zh-cn/3/howto/descriptor.html#static-methods-and-class-methods">静态方法和类方法</a>一节中详细了解函数绑定为方法的过程。同时在 Python <a href="https://docs.python.org/zh-cn/3.9/tutorial/classes.html">类</a>一文的<a href="https://docs.python.org/zh-cn/3.9/tutorial/classes.html#method-objects">方法对象</a>一节中也有相关的解释。</p>
+<h1 id="__slots__">__slots__</h1>
+<p>Python 的对象属性值都是采用字典存储的，当我们处理数成千上万甚至更多的实例时，内存消耗可能是一个问题，因为字典哈希表的实现，总是为每个实例创建了大量的内存。所以 Python 提供了一种 <a href="https://docs.python.org/zh-cn/3/reference/datamodel.html#slots">__slots__</a> 的方式来禁用实例使用 <code>__dict__</code>，以优化此问题。</p>
+<p>通过 <code>__slots__</code> 来指定属性后，会将属性的存储从实例的 <code>__dict__</code> 改为类的 <code>__dict__</code> 中：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">class</span> <span style="color:#268bd2">Test</span>:
+    __slots__ <span style="color:#719e07">=</span> (<span style="color:#2aa198">&#39;a&#39;</span>, <span style="color:#2aa198">&#39;b&#39;</span>)
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, a, b):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>a <span style="color:#719e07">=</span> a
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>b <span style="color:#719e07">=</span> b
+</code></pre></div><div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> t <span style="color:#719e07">=</span> Test(<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>)
+<span style="color:#719e07">&gt;&gt;&gt;</span> t<span style="color:#719e07">.</span>__dict__
+<span style="color:#cb4b16">AttributeError</span>: <span style="color:#2aa198">&#39;Test&#39;</span> <span style="color:#b58900">object</span> has no attribute <span style="color:#2aa198">&#39;__dict__&#39;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> Test<span style="color:#719e07">.</span>__dict__
+mappingproxy({<span style="color:#2aa198">&#39;__module__&#39;</span>: <span style="color:#2aa198">&#39;__main__&#39;</span>,
+              <span style="color:#2aa198">&#39;__slots__&#39;</span>: (<span style="color:#2aa198">&#39;a&#39;</span>, <span style="color:#2aa198">&#39;b&#39;</span>),
+              <span style="color:#2aa198">&#39;__init__&#39;</span>: <span style="color:#719e07">&lt;</span>function __main__<span style="color:#719e07">.</span>Test<span style="color:#719e07">.</span>__init__(<span style="color:#268bd2">self</span>, a, b)<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;a&#39;</span>: <span style="color:#719e07">&lt;</span>member <span style="color:#2aa198">&#39;a&#39;</span> of <span style="color:#2aa198">&#39;Test&#39;</span> objects<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;b&#39;</span>: <span style="color:#719e07">&lt;</span>member <span style="color:#2aa198">&#39;b&#39;</span> of <span style="color:#2aa198">&#39;Test&#39;</span> objects<span style="color:#719e07">&gt;</span>,
+              <span style="color:#2aa198">&#39;__doc__&#39;</span>: <span style="color:#268bd2">None</span>})
+</code></pre></div><p>关于 __slots__ 我之前专门写过一篇文章分享过，感兴趣的同学请移步<a href="/posts/py-slots/">理解 Python 类属性 __slots__</a> 一文。</p>
+<h1 id="补充">补充</h1>
+<h2 id="__getattribute__-和-__getattr__">__getattribute__ 和 __getattr__</h2>
+<p>也许你还有疑问，那函数的 <code>__get__</code> 方法是怎么被调用的呢，这中间过程是什么样的？</p>
+<p>在 Python 中 一切皆对象，所有对象都有一个默认的方法 <code>__getattribute__(self, name)</code>。</p>
+<p>该方法会在我们使用 <code>.</code> 访问 <code>obj</code> 的属性时会自动调用，为了防止递归调用，它总是实现为从基类 <code>object</code> 中获取 <code>object.__getattribute__(self, name)</code>, 该方法大部分情况下会默认从 <code>self</code> 的 <code>__dict__</code> 字典中查找 <code>name</code>(除了<a href="https://docs.python.org/zh-cn/3/reference/datamodel.html#special-lookup">特殊方法的查找</a>)。</p>
+<blockquote>
+<p>话外：如果该类还实现了 <code>__getattr__</code>，<strong>则只有 <code>__getattribute__</code> 显式地调用或是引发了 <code>AttributeError</code> 异常后才会被调用</strong>。<code>__getattr__</code> 由开发者自己实现，应当返回属性值或引发 <code>AttributeError</code> 异常。</p>
+</blockquote>
+<p>而描述器正是由 <code>__getattribute__()</code> 方法调用，其大致逻辑为：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">def</span> __getattribute__(<span style="color:#268bd2">self</span>, key):
+    v <span style="color:#719e07">=</span> <span style="color:#b58900">object</span><span style="color:#719e07">.</span>__getattribute__(<span style="color:#268bd2">self</span>, key)
+    <span style="color:#719e07">if</span> <span style="color:#b58900">hasattr</span>(v, <span style="color:#2aa198">&#39;__get__&#39;</span>):
+        <span style="color:#719e07">return</span> v<span style="color:#719e07">.</span>__get__(<span style="color:#268bd2">self</span>)
+    <span style="color:#719e07">return</span> v
+</code></pre></div><blockquote>
+<p>请注意：重写 <code>__getattribute__()</code> 会阻止描述器的自动调用。</p>
+</blockquote>
+<h2 id="函数属性">函数属性</h2>
+<p>函数也是 Python <code>function</code> 对象，所以一样，它也具有任意属性，这有时候是有用的，比如实现一个简单的函数调用跟踪装饰器：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">def</span> <span style="color:#268bd2">calltracker</span>(func):
+    <span style="color:#268bd2">@wraps</span>(func)
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">wrapper</span>(<span style="color:#719e07">*</span>args, <span style="color:#719e07">**</span>kwargs):
+        wrapper<span style="color:#719e07">.</span>calls <span style="color:#719e07">+=</span> <span style="color:#2aa198">1</span>
+        <span style="color:#719e07">return</span> func(<span style="color:#719e07">*</span>args, <span style="color:#719e07">**</span>kwargs)
+    wrapper<span style="color:#719e07">.</span>calls <span style="color:#719e07">=</span> <span style="color:#2aa198">0</span>
+    <span style="color:#719e07">return</span> wrapper
+
+<span style="color:#268bd2">@calltracker</span>
+<span style="color:#719e07">def</span> <span style="color:#268bd2">f</span>():
+    <span style="color:#719e07">return</span> <span style="color:#2aa198">&#39;f called&#39;</span>
+</code></pre></div><div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#719e07">&gt;&gt;&gt;</span> f<span style="color:#719e07">.</span>calls
+<span style="color:#2aa198">0</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> f()
+<span style="color:#2aa198">&#39;f called&#39;</span>
+<span style="color:#719e07">&gt;&gt;&gt;</span> f<span style="color:#719e07">.</span>calls
+<span style="color:#2aa198">1</span>
+</code></pre></div><h1 id="参考">参考</h1>
+<ul>
+<li><a href="https://utcc.utoronto.ca/~cks/space/blog/python/HowFunctionsToMethods">HowFunctionsToMethods</a></li>
+<li><a href="https://docs.python.org/3/howto/descriptor.html">Descriptor HowTo Guide</a></li>
+<li><a href="https://docs.python.org/3/reference/datamodel.html">Python Data model</a></li>
+<li><a href="https://rushter.com/blog/python-class-internals">Understanding internals of Python classes</a></li>
+</ul>
+<!-- Python Tutorial: Understanding Python MRO - Class search path -->
+		</div>
+		<br>
+		
+		
+		<hr>
+			<footer class="post__footer">
+				
+<div class="post__tags tags clearfix">
+	<svg class="tags__badge icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/%E5%9F%BA%E7%A1%80%E5%8E%9F%E7%90%86/" rel="tag">基础原理</a></li>
+	</ul>
+</div>
+			</footer>
+		
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<a href="/about">
+			<img alt="关于 feileo avatar" src="https://cdn.at7h.com/img/avatar.jpg" class="avatar" height="90"
+				width="90">
+		</a>
+	</figure>
+	<div class="authorbox__header">
+		<a href="/about">
+			<span class="authorbox__name">关于 feileo</span>
+		</a>
+	</div>
+	<div class="authorbox__description">
+		You may say I&#39;m a dreamer, but I&#39;m not the only one.
+	</div>
+	<div class="authorbox__description_sub">
+		--John Winston Lennon 《Imagine》
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/posts/gc-in-py/" rel="prev"><span class="post-nav__caption">«&thinsp;上一篇</span><p class="post-nav__post-title">GC 机制探究之 Python 篇</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+    <div id="utter-container"></div>
+    <script src="https://utteranc.es/client.js"
+        repo= 'feileo/feileo.github.io'
+        issue-term= "pathname"
+        theme= 'github-light'
+        crossorigin= "anonymous",
+        label='✨💬✨'
+        async>
+	</script> 
+</section>
+
+
+
+			</div>
+			
+		</div>
+		<footer class="footer">
+	<div>
+		
+		<div class="footer__copyright">
+			<div class="footer__text">
+				<p>本博客基于 <a href="https://golang.google.cn/" target="_blank"> Golang </a> + <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> +  <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> 构建</p>
+        <p>本站由 <a href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral" target="_blank"><img width="50" src="https://cdn.at7h.com/img/upyun_logo.png"></a> 提供 CDN 加速/静态资源存储服务</p>
+				<p>由 <a href="https://utteranc.es/" target="_blank"><img width="19" src="https://cdn.at7h.com/img/utteranc.png"> utterances</a> 提供评论系统</p>
+				<p>
+					<span id="busuanzi_container_site_pv">
+						本站运行自 2020-10-01,
+						累计 PV
+						1<span id="busuanzi_value_site_pv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>,
+					<span id="busuanzi_container_site_uv">
+						UV <span id="busuanzi_value_site_uv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>
+				</p>
+		<p>
+			<a target="_blank" href="/sitemap.xml">站点地图</a> &nbsp;·&nbsp; 
+			<a target="_blank" href="/index.xml" type="application/rss+xml" title="rss"> RSS 
+			</a>
+		</p>
+        <p>版权所有 &copy; 2021 at7h.com</p>
+        
+
+			</div>
+		</div>
+		<div class="footer__text__sub">
+			<a target="_blank" href="http://beian.miit.gov.cn">京 ICP 备 2020037066 号 - 1</a>
+			<br>
+			<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=61092802000118">
+				<img style="vertical-align: text-bottom;" width="18" src="https://cdn.at7h.com/img/beian.png">
+				陕公网安备 61092802000118 号
+      </a>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+</body>
+</html>

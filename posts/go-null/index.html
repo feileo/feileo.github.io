@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="baidu-site-verification" content="0iFDP8mhHL" />
+	<title>
+		
+			
+				Golang 零值、空值与空结构 -
+			
+			feileo
+		 的博客
+	</title>
+	<script>
+		(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");
+	</script>
+	<meta name="description" content="这篇文章我们讨论下有关 Golang 中的零值（The zero value）、空值（nil）和空结构（The empty struct）的相关问题以及它们的一些用途 ...">
+	
+		<meta property="og:title" content="Golang 零值、空值与空结构" />
+<meta property="og:description" content="这篇文章我们讨论下有关 Golang 中的零值（The zero value）、空值（nil）和空结构（The empty struct）的相关问题以及它们的一些用途 ..." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://at7h.com/posts/go-null/" />
+<meta property="article:published_time" content="2020-08-01T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-08-01T00:00:00+00:00" />
+
+	
+	
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	
+	<link rel="shortcut icon" href="/img/favicon.ico">
+	
+		
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-155215466-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+	<link rel="stylesheet" href="/highlight/styles/atom-one-dark.css">
+
+	<script src="/js/jquery.min.js"></script>
+	<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+	<script src="/highlight/highlight.pack.js" type='text/javascript'></script>
+	
+	<script type="text/javascript">
+	$(document).ready(function(){
+    hljs.initHighlightingOnLoad();
+		
+	});
+
+	(function(){
+		var bp = document.createElement('script');
+		var curProtocol = window.location.protocol.split(':')[0];
+		if (curProtocol === 'https') {
+			bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+		}
+		else {
+			bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+		}
+		var s = document.getElementsByTagName("script")[0];
+		s.parentNode.insertBefore(bp, s);
+  	})();
+	</script>
+</head>
+
+<body class="body">
+	<div class="container container--outer">
+		<header class="header">
+    <div class="container">
+        <div class="logo">
+            <a class="logo__link" href="/" title="feileo" rel="home">
+              <div class="logo__title">
+								feileo  
+							</div>
+							
+							<div class="logo__tagline">关注互联网开发技术，记录、总结与分享 👣</div>
+							
+						</a>
+						
+        </div>
+        
+
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1"><svg t="1571404030009" class="meta__icon icon icon-list" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1829" width="20" height="20"><path d="M892.928 128q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 448.512q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 769.024q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0z" p-id="1830" fill="#1e90ff"></path></svg></span>
+	</button>
+	<mul class="menu__list">
+		
+		<li class="menu__item">
+			<a class="menu__link__home" href="/"><svg t="1571149675735" class="meta__icon icon icon-home" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3856" width="22" height="22"><path d="M230.4 992c-64 0-115.2-51.2-115.2-115.2L115.2 544 76.8 582.4C70.4 588.8 57.6 595.2 44.8 595.2c-12.8 0-25.6-6.4-32-12.8C6.4 569.6 0 556.8 0 544 0 537.6 6.4 524.8 12.8 512l467.2-467.2C486.4 38.4 499.2 32 512 32s25.6 6.4 32 12.8L1011.2 512C1017.6 524.8 1024 537.6 1024 544c0 12.8-6.4 25.6-12.8 32-6.4 6.4-19.2 12.8-32 12.8s-25.6-6.4-32-12.8L512 147.2 211.2 448l0 422.4c0 12.8 12.8 25.6 25.6 25.6l115.2 0 0-185.6c0-25.6 19.2-44.8 44.8-44.8l230.4 0c25.6 0 44.8 19.2 44.8 44.8s-19.2 44.8-44.8 44.8L441.6 755.2l0 185.6c0 25.6-19.2 44.8-44.8 44.8L230.4 985.6zM627.2 992c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8l160 0c12.8 0 25.6-12.8 25.6-25.6l0-256c0-25.6 19.2-44.8 44.8-44.8 25.6 0 44.8 19.2 44.8 44.8l0 256c0 64-51.2 115.2-115.2 115.2L627.2 992z" p-id="3857" fill="#ffffff"></path></svg></a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/python">Python</a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/golang">Golang</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/vim">Vim</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link" href="/categories/tool">效率工具</a>
+			
+		</li>
+		
+		
+		
+		
+		
+	</mul>
+</nav>
+
+    </div>
+</header>
+
+
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<div class="post__title">Golang 零值、空值与空结构</div>
+			<div class="post__meta meta">
+					
+<div class="meta__item-categories meta__item">
+	<svg t="1571148699121" class="meta__icon icon icon-category" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5705" width="16" height="16"><path d="M853.333333 938.666667 42.666667 938.666667c-25.6 0-42.666667-17.066667-42.666667-42.666667L0 128c0-25.6 17.066667-42.666667 42.666667-42.666667l298.666667 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 42.666667 469.333333 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 170.666667c0 25.6-17.066667 42.666667-42.666667 42.666667s-42.666667-17.066667-42.666667-42.666667L810.666667 256 341.333333 256C315.733333 256 298.666667 238.933333 298.666667 213.333333L298.666667 170.666667 85.333333 170.666667l0 682.666667 768 0c25.6 0 42.666667 17.066667 42.666667 42.666667S878.933333 938.666667 853.333333 938.666667z" p-id="5706" fill="#515151"></path><path d="M853.333333 938.666667 42.666667 938.666667c-12.8 0-25.6-4.266667-34.133333-17.066667S0 900.266667 0 887.466667l128-512C132.266667 354.133333 149.333333 341.333333 170.666667 341.333333l810.666667 0c12.8 0 25.6 4.266667 34.133333 17.066667S1024 379.733333 1024 392.533333l-128 512C891.733333 925.866667 874.666667 938.666667 853.333333 938.666667zM98.133333 853.333333l721.066667 0 106.666667-426.666667L204.8 426.666667 98.133333 853.333333z" p-id="5707" fill="#515151"></path></svg>
+	<span class="meta__text">
+		
+		<a class="meta__link" href="/categories/golang" rel="category">
+			
+			Golang
+			
+		</a>
+		
+	</span>
+</div>
+
+<div class="meta__item-datetime meta__item">
+	<svg t="1571148896140" class="meta__icon icon icon-date" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8190" width="16" height="16"><path d="M883.278513 148.539035l-43.016723 0 0-12.780071c0-38.310537-31.199583-69.632917-69.323878-69.632917l-1.02433 0c-38.129412 0-69.323878 31.321356-69.323878 69.632917l0 12.780071L317.20292 148.539035l0-12.780071c0-38.310537-31.195489-69.632917-69.323878-69.632917l-1.055029 0c-38.127366 0-69.322855 31.321356-69.322855 69.632917l0 12.780071-42.924625 0c-38.127366 0-69.323878 31.351032-69.323878 69.609381l0 665.701614c0 38.309514 31.195489 69.632917 69.323878 69.632917l748.70198 0c38.127366 0 69.322855-31.323403 69.322855-69.632917l0-665.701614C952.601368 179.890067 921.405879 148.539035 883.278513 148.539035L883.278513 148.539035zM728.318232 135.758963c0-23.024389 18.632359-41.777499 41.594327-41.777499l1.02433 0c22.931269 0 41.593304 18.753109 41.593304 41.777499L812.530193 259.615852c0 23.024389-18.662035 41.778522-41.593304 41.778522l-1.02433 0c-22.961968 0-41.594327-18.754133-41.594327-41.778522L728.318232 135.758963 728.318232 135.758963zM205.23071 135.758963c0-23.024389 18.632359-41.777499 41.599444-41.777499l1.048889 0c22.903639 0 41.594327 18.753109 41.594327 41.777499L289.473369 259.615852c0 23.024389-18.691711 41.778522-41.594327 41.778522l-1.048889 0c-22.967084 0-41.599444-18.754133-41.599444-41.778522L205.23071 135.758963 205.23071 135.758963zM883.278513 897.807926l-748.70198 0c-7.519254 0-13.864776-6.468318-13.864776-13.957897L120.711757 394.394489l776.433578 0 0 489.455541C897.144312 891.338584 890.797767 897.807926 883.278513 897.807926L883.278513 897.807926zM222.614635 494.083955l127.918391 0 0 62.950727L222.614635 557.034682 222.614635 494.083955 222.614635 494.083955zM445.963493 494.083955l126.906342 0 0 62.950727L445.963493 557.034682 445.963493 494.083955 445.963493 494.083955zM668.299277 494.083955l124.873032 0 0 62.950727L668.299277 557.034682 668.299277 494.083955 668.299277 494.083955zM222.614635 622.00951l127.918391 0 0 61.927421L222.614635 683.936931 222.614635 622.00951 222.614635 622.00951zM445.963493 622.00951l126.906342 0 0 61.927421L445.963493 683.936931 445.963493 622.00951 445.963493 622.00951zM668.299277 622.00951l124.873032 0 0 61.927421L668.299277 683.936931 668.299277 622.00951 668.299277 622.00951zM222.614635 746.884588l127.918391 0 0 64.97278L222.614635 811.857369 222.614635 746.884588 222.614635 746.884588zM445.963493 746.884588l126.906342 0 0 64.97278L445.963493 811.857369 445.963493 746.884588 445.963493 746.884588zM668.299277 746.884588l124.873032 0 0 64.97278L668.299277 811.857369 668.299277 746.884588 668.299277 746.884588zM668.299277 746.884588" p-id="8191" fill="#515151"></path></svg>
+	更新于 <time class="meta__text" datetime="2020-08-01T00:00:00">2020-08-01</time>
+</div>
+
+<div class="meta__item-word_count meta__item">
+	<svg t="1571149110363" class="meta__icon icon icon-wordcount" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1792" width="16" height="16"><path d="M286.722048 405.987328l0 477.058048-132.51584 0L154.206208 405.987328 286.722048 405.987328M313.22624 352.980992 127.70304 352.980992c-14.636032 0-26.503168 11.867136-26.503168 26.503168L101.199872 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.5232 0c14.636032 0 26.503168-11.867136 26.503168-26.503168L339.729408 379.483136C339.729408 364.847104 327.862272 352.980992 313.22624 352.980992L313.22624 352.980992zM577.998848 563.557376l0 319.488L445.476864 883.045376l0-319.488L577.998848 563.557376M604.502016 510.543872l-185.52832 0c-14.636032 0-26.503168 11.859968-26.503168 26.510336L392.470528 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.52832 0c14.623744 0 26.504192-11.867136 26.504192-26.503168L631.006208 537.054208c0-14.623744-11.880448-26.497024-26.504192-26.497024l0 0L604.502016 510.543872zM869.792768 140.954624l0 742.090752L737.5104 883.045376l0-742.090752L869.792768 140.954624M896.29696 87.948288 711.007232 87.948288c-14.649344 0-26.503168 11.867136-26.503168 26.503168L684.504064 909.54752c0 14.636032 11.853824 26.503168 26.503168 26.503168L896.29696 936.050688c14.636032 0 26.503168-11.867136 26.503168-26.503168l0-795.096064C922.800128 99.815424 910.932992 87.948288 896.29696 87.948288L896.29696 87.948288z" p-id="1793" fill="#515151"></path></svg>
+    约 <span class="meta__text">2729</span> 个字
+</div>
+
+<div class="meta__item-reading_time meta__item">
+	<svg t="1571149199980" class="meta__icon icon icon-time" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2748" width="16" height="16"><path d="M512 64C264.96 64 64 264.96 64 512s200.96 448 448 448 448-200.96 448-448S759.04 64 512 64zM512 895.712c-211.584 0-383.712-172.16-383.712-383.712C128.288 300.416 300.416 128.288 512 128.288c211.552 0 383.712 172.128 383.712 383.712C895.712 723.552 723.552 895.712 512 895.712z" p-id="2749" fill="#515151"></path><path d="M671.968 512 512 512 512 288.064c0-17.76-14.24-32.128-32-32.128s-32 14.4-32 32.128L448 544c0 17.76 14.272 32 32 32l191.968 0c17.76 0 32.128-14.24 32.128-32S689.728 512 671.968 512z" p-id="2750" fill="#515151"></path></svg>    
+    阅读约需 <span class="meta__text">
+        
+            6
+         m</span>
+</div>
+
+						<div class="meta__item-page_pv meta__item">
+    
+    <span class="meta__text">
+        <span id="busuanzi_container_page_pv">
+            
+        </span>
+    </span>
+</div>
+				</div>
+		</header>
+		<div class="content post__content clearfix">
+			<p>这篇文章我们讨论下有关 Golang 中的零值（The zero value）、空值（nil）和空结构（The empty struct）的相关问题以及它们的一些用途。</p>
+<h1 id="零值">零值</h1>
+<p>零值是指当你声明变量（分配内存）并未显式初始化时，始终为你的变量自动设置一个默认初始值的策略。</p>
+<p>首先我们来看看官方有关零值（<a href="https://golang.org/ref/spec#The_zero_value">The zero value</a>）的规范：</p>
+<blockquote>
+<p>When storage is allocated for a variable, either through a declaration or a call of new, or when a new value is created, either through a composite literal or a call of make, and no explicit initialization is provided, the variable or value is given a default value. Each element of such a variable or value is set to the zero value for its type: false for booleans, 0 for numeric types, &quot;&rdquo; for strings, and nil for pointers, functions, interfaces, slices, channels, and maps. This initialization is done recursively, so for instance each element of an array of structs will have its fields zeroed if no value is specified.</p>
+</blockquote>
+<p>据此我们可总结出：</p>
+<ul>
+<li>对于<strong>值类型</strong>：布尔类型为 <code>false</code>, 数值类型为 <code>0</code>，字符串为 <code>&quot;&quot;</code>，数组和结构会递归初始化其元素或字段，即其初始值取决于元素或字段。</li>
+<li>对于<strong>引用类型</strong>： 均为 <a href="#nil"><code>nil</code></a>，包括指针 pointer，函数 function，接口 interface，切片 slice，管道 channel，映射 map。</li>
+</ul>
+<p>通常，为你声明的变量赋予一个默认值是有用的，尤其是为你数组和结构中的元素或字段设置默认值，这是一种保证安全性和正确性的做法，同时也可以让你的代码保持简洁。</p>
+<p>比如，下面的示例是我们常用的，结构体 <code>Value</code> 中包含两个 unexported 字段，<code>sync.Mutex</code> 中也有<a href="https://golang.org/src/sync/mutex.go#L21">两个 unexported 字段</a>。因为有默认零值，所以我们可以直接使用：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#719e07">package</span> main
+
+<span style="color:#719e07">import</span> <span style="color:#2aa198">&#34;sync&#34;</span>
+
+<span style="color:#268bd2">type</span> Value <span style="color:#268bd2">struct</span> {
+    mu sync.Mutex
+    val <span style="color:#dc322f">int</span>
+}
+
+<span style="color:#268bd2">func</span> (v <span style="color:#719e07">*</span>Value)<span style="color:#268bd2">Incr</span>(){
+    <span style="color:#719e07">defer</span> v.mu.<span style="color:#268bd2">Unlock</span>()
+
+    v.mu.<span style="color:#268bd2">Lock</span>()
+    v.val<span style="color:#719e07">++</span>
+}
+
+<span style="color:#268bd2">func</span> <span style="color:#268bd2">main</span>() {
+    <span style="color:#268bd2">var</span> i Value
+
+    i.<span style="color:#268bd2">Incr</span>()
+}
+</code></pre></div><p>因为切片是引用类型的，所以其零值也是 <code>nil</code>：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#719e07">package</span> main
+
+<span style="color:#719e07">import</span> <span style="color:#2aa198">&#34;fmt&#34;</span>
+<span style="color:#719e07">import</span> <span style="color:#2aa198">&#34;strings&#34;</span>
+
+<span style="color:#268bd2">func</span> <span style="color:#268bd2">main</span>(){
+    <span style="color:#268bd2">var</span> s []<span style="color:#dc322f">string</span>
+
+    fmt.<span style="color:#268bd2">Println</span>(s, <span style="color:#b58900">len</span>(s), <span style="color:#b58900">cap</span>(s)) <span style="color:#586e75">// [] 0 0
+</span><span style="color:#586e75"></span>    fmt.<span style="color:#268bd2">Println</span>(s <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>) <span style="color:#586e75">// true
+</span><span style="color:#586e75"></span>
+    s = <span style="color:#b58900">append</span>(s, <span style="color:#2aa198">&#34;Hello&#34;</span>)
+    s = <span style="color:#b58900">append</span>(s, <span style="color:#2aa198">&#34;World&#34;</span>)
+    fmt.<span style="color:#268bd2">Println</span>(strings.<span style="color:#268bd2">Join</span>(s, <span style="color:#2aa198">&#34;, &#34;</span>)) <span style="color:#586e75">// Hello, World
+</span><span style="color:#586e75"></span>}
+</code></pre></div><p>下面的情况需要特别注意下，有时候不注意就容易混淆，<code>:=</code> 语法糖是<strong>声明并且初始化变量</strong>的，所以是一个真正的实例（为其分配了内存地址的），并不是零值 <code>nil</code>：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#719e07">package</span> main
+
+<span style="color:#719e07">import</span> <span style="color:#2aa198">&#34;fmt&#34;</span>
+<span style="color:#719e07">import</span> <span style="color:#2aa198">&#34;reflect&#34;</span>
+
+<span style="color:#268bd2">func</span> <span style="color:#268bd2">main</span>() {
+    <span style="color:#268bd2">var</span> s1 []<span style="color:#dc322f">string</span>
+    s2 <span style="color:#719e07">:=</span> []<span style="color:#dc322f">string</span>{} <span style="color:#586e75">// 或者等同于 var s2 = []string{}
+</span><span style="color:#586e75"></span>
+    fmt.<span style="color:#268bd2">Println</span>(s1 <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>) <span style="color:#586e75">// true
+</span><span style="color:#586e75"></span>    fmt.<span style="color:#268bd2">Println</span>(s2 <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>) <span style="color:#586e75">// false
+</span><span style="color:#586e75"></span>
+    fmt.<span style="color:#268bd2">Println</span>(reflect.<span style="color:#268bd2">DeepEqual</span>(s1, s2)) <span style="color:#586e75">// false
+</span><span style="color:#586e75"></span>
+    fmt.<span style="color:#268bd2">Println</span>(reflect.<span style="color:#268bd2">DeepEqual</span>(s1, []<span style="color:#dc322f">string</span>{}))  <span style="color:#586e75">// false
+</span><span style="color:#586e75"></span>    fmt.<span style="color:#268bd2">Println</span>(reflect.<span style="color:#268bd2">DeepEqual</span>(s2, []<span style="color:#dc322f">string</span>{}))  <span style="color:#586e75">// true
+</span><span style="color:#586e75"></span>}
+</code></pre></div><p>另外，对于空结构的 <code>nil</code> 是可以调用该类型的方法的，这还可以用来简单地提供默认值：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#719e07">package</span> main
+
+<span style="color:#719e07">import</span> <span style="color:#2aa198">&#34;fmt&#34;</span>
+
+<span style="color:#268bd2">const</span> defaultPath = <span style="color:#2aa198">&#34;/usr/bin/&#34;</span>
+
+<span style="color:#268bd2">type</span> Config <span style="color:#268bd2">struct</span> {
+    path <span style="color:#dc322f">string</span>
+}
+
+<span style="color:#268bd2">func</span> (c <span style="color:#719e07">*</span>Config) <span style="color:#268bd2">Path</span>() <span style="color:#dc322f">string</span> {
+    <span style="color:#719e07">if</span> c <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span> {
+            <span style="color:#719e07">return</span> defaultPath
+    }
+    <span style="color:#719e07">return</span> c.path
+}
+
+<span style="color:#268bd2">func</span> <span style="color:#268bd2">main</span>() {
+    <span style="color:#268bd2">var</span> c1 <span style="color:#719e07">*</span>Config
+    <span style="color:#268bd2">var</span> c2 = <span style="color:#719e07">&amp;</span>Config{
+            path: <span style="color:#2aa198">&#34;/usr/local/bin/&#34;</span>,
+    }
+    fmt.<span style="color:#268bd2">Println</span>(c1.<span style="color:#268bd2">Path</span>(), c2.<span style="color:#268bd2">Path</span>())
+}
+</code></pre></div><h1 id="nil">nil</h1>
+<p>对于一个刚开始使用 Golang 的开发人员，刚开始接触 <code>nil</code> 应该是使用它来检查错误，大致像这样：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">func</span> <span style="color:#268bd2">doSomething</span>() <span style="color:#dc322f">error</span> {
+    <span style="color:#719e07">return</span> <span style="color:#cb4b16">nil</span>
+}
+
+<span style="color:#268bd2">func</span> <span style="color:#268bd2">main</span>(){
+    <span style="color:#719e07">if</span> <span style="color:#268bd2">doSomething</span>() <span style="color:#719e07">!=</span> <span style="color:#cb4b16">nil</span> {
+        <span style="color:#719e07">return</span> err
+    }
+}
+</code></pre></div><p>这是 Golang 惯用的，它鼓励开发人员显式的的将错误作为返回值来处理。现在我们来讨论下这个 <code>nil</code>，在其他语言中也有类似的定义，比如 C、C++、Java 等中的 <code>null</code>，Python 中的 <code>None</code>，但是 Goalng 中的 <code>nil</code> 与它们有着很多区别。</p>
+<p><code>nil</code> 是 Golang 中预先声明的标识符（非关键字保留字），其主要用来表示引用类型的零值（指针，接口，函数，映射，切片和通道），表示它们未初始化的值。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#586e75">// [src/builtin/builtin.go](https://golang.org/src/builtin/builtin.go#L98)
+</span><span style="color:#586e75">//
+</span><span style="color:#586e75">// nil is a predeclared identifier representing the zero value for a
+</span><span style="color:#586e75">// pointer, channel, func, interface, map, or slice type.
+</span><span style="color:#586e75"></span><span style="color:#268bd2">var</span> <span style="color:#cb4b16">nil</span> Type <span style="color:#586e75">// Type must be a pointer, channel, func, interface, map, or slice type
+</span></code></pre></div><p><code>nil</code> 是 Golang 中唯一没有默认类型的非类型化的值，它不是一个未定义的状态。所以你不能像这样使用它：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">a <span style="color:#719e07">:=</span> <span style="color:#cb4b16">nil</span>
+<span style="color:#586e75">// cannot declare variable as untyped nil: a
+</span></code></pre></div><p>将一个并没有类型 <code>nil</code> 的值赋给 <code>a</code> 是不对的，编译器不知道它该给 <code>a</code> 分配什么类型。</p>
+<p>值得一提的是 Golang 中比较出名的 <code>nil != nil</code> 的问题，我们来看下面的一个例子：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">var</span> p <span style="color:#719e07">*</span><span style="color:#dc322f">int</span>
+<span style="color:#268bd2">var</span> i <span style="color:#268bd2">interface</span>{}
+
+fmt.<span style="color:#268bd2">Println</span>(p)      <span style="color:#586e75">// &lt;nil&gt;
+</span><span style="color:#586e75"></span>fmt.<span style="color:#268bd2">Println</span>(i)      <span style="color:#586e75">// &lt;nil&gt;
+</span><span style="color:#586e75"></span>
+fmt.<span style="color:#268bd2">Println</span>(p <span style="color:#719e07">==</span> i) <span style="color:#586e75">// false
+</span></code></pre></div><p>Why？为什么同样都是 <code>nil</code> 却不相等呢？</p>
+<p>带着问题，我们再来看一个下面的例子（来自官方 <a href="https://golang.org/doc/faq#nil_error">Why is my nil error value not equal to nil</a>）:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">func</span> <span style="color:#268bd2">Foo</span>() <span style="color:#dc322f">error</span> {
+    <span style="color:#268bd2">var</span> err <span style="color:#719e07">*</span>MyError = <span style="color:#cb4b16">nil</span>
+    <span style="color:#719e07">if</span> <span style="color:#268bd2">bad</span>() {
+        err = ErrBad
+    }
+    <span style="color:#719e07">return</span> err
+}
+
+<span style="color:#268bd2">func</span> <span style="color:#268bd2">main</span>() {
+    err <span style="color:#719e07">:=</span> <span style="color:#268bd2">Foo</span>()
+    fmt.<span style="color:#268bd2">Println</span>(err)        <span style="color:#586e75">// &lt;nil&gt;
+</span><span style="color:#586e75"></span>    fmt.<span style="color:#268bd2">Println</span>(err <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>) <span style="color:#586e75">// false
+</span><span style="color:#586e75"></span>}
+</code></pre></div><p>其罪魁祸首就是 <code>interface</code>，接口相关的实现原理不在本文的讨论范围，后面再具体分享。其大致原理是，接口要确定一个变量需要两个基础属性：<strong>Type</strong> and <strong>Value</strong>，下面我们给上面的两段代码加上注释，就明白了：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">var</span> p <span style="color:#719e07">*</span><span style="color:#dc322f">int</span>          <span style="color:#586e75">// (T=*int,V=nil)
+</span><span style="color:#586e75"></span><span style="color:#268bd2">var</span> i <span style="color:#268bd2">interface</span>{}   <span style="color:#586e75">// (T=nil,V=nil)
+</span><span style="color:#586e75"></span>
+fmt.<span style="color:#268bd2">Println</span>(p <span style="color:#719e07">==</span> i) <span style="color:#586e75">// (T=*int, V=nil) == (T=nil, V=nil) -&gt; false
+</span></code></pre></div><div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">func</span> <span style="color:#268bd2">Foo</span>() <span style="color:#dc322f">error</span> {
+    <span style="color:#268bd2">var</span> err <span style="color:#719e07">*</span>PathError = <span style="color:#cb4b16">nil</span>  <span style="color:#586e75">// (T=*PathError, V=nil)
+</span><span style="color:#586e75"></span>    <span style="color:#719e07">if</span> <span style="color:#268bd2">bad</span>() {
+        err = ErrBad
+    }
+    <span style="color:#719e07">return</span> err  <span style="color:#586e75">// 这将始终返回 non-nil 错误
+</span><span style="color:#586e75"></span>}
+
+<span style="color:#268bd2">func</span> <span style="color:#268bd2">main</span>() {
+    err <span style="color:#719e07">:=</span> <span style="color:#268bd2">Foo</span>()
+    fmt.<span style="color:#268bd2">Println</span>(err)        <span style="color:#586e75">// &lt;nil&gt;
+</span><span style="color:#586e75"></span>    fmt.<span style="color:#268bd2">Println</span>(err <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>) <span style="color:#586e75">// (T=*PathError, V=nil) == (T=nil, V=nil) -&gt; false
+</span><span style="color:#586e75"></span>}
+</code></pre></div><blockquote>
+<p>请注意：为了避免此问题，返回错误时请永远使用 <code>error</code> 接口，并且永远不要初始化可能从函数返回的空错误变量。</p>
+</blockquote>
+<p>我们将上面的例子再改改，看下面的例子：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">var</span> p <span style="color:#719e07">*</span><span style="color:#dc322f">int</span>              <span style="color:#586e75">// (T=*int, V=nil)
+</span><span style="color:#586e75"></span><span style="color:#268bd2">var</span> i <span style="color:#268bd2">interface</span>{}       <span style="color:#586e75">// (T=nil, V=nil)
+</span><span style="color:#586e75"></span>
+fmt.<span style="color:#268bd2">Println</span>(p <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>)   <span style="color:#586e75">// true
+</span><span style="color:#586e75"></span>fmt.<span style="color:#268bd2">Println</span>(i <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>)   <span style="color:#586e75">// true
+</span><span style="color:#586e75"></span>
+i = p
+
+fmt.<span style="color:#268bd2">Println</span>(i <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>)     <span style="color:#586e75">// (T=*int, V=nil) == (T=nil, V=nil) -&gt; false
+</span></code></pre></div><p>这个问题的实质就是 Go Tour 中的 <a href="https://tour.golang.org/methods/12">Interface values with nil underlying values</a>。</p>
+<p>示例中 <code>i</code> 可以传递给一个 <code>interface{}</code> 作为输入参数的函数，你只检查 <code>i == nil</code> 是不够的。所以对于接口类型的空指针的判断，有些时候你并不能安全的依靠 <code>v == nil</code>，尽管这种检查的坑很少发生，但这有时候可能会使你的程序崩溃。对此，可以有两种方式解决，你可以分别将类型和值分别和 <code>nil</code> 比较或者使用反射包 <code>reflect</code>。</p>
+<blockquote>
+<p>请记住：如果接口中已存储任何具体值，那么接口将不会是 <code>nil</code>，详见<a href="https://blog.golang.org/laws-of-reflection">反射定律</a>。</p>
+</blockquote>
+<p>还有就是，也许你也感到困惑，还是上面的例子，为什么下面的类型就可以直接比较并获得准确的结果：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">var</span> p <span style="color:#719e07">*</span><span style="color:#dc322f">int</span>              <span style="color:#586e75">// (T=*int, V=nil)
+</span><span style="color:#586e75"></span>
+fmt.<span style="color:#268bd2">Println</span>(p <span style="color:#719e07">==</span> <span style="color:#cb4b16">nil</span>)   <span style="color:#586e75">// true
+</span></code></pre></div><p>这是因为在进行上面的比较时，因为编译器已经清楚的知道了 <code>p</code> 的类型，所以编译器可以转化为 <code>p == (*int)(nil)</code>。但是对于接口，编译器是没法确定底层类型的，因为它是可以被更改的。</p>
+<h1 id="空结构">空结构</h1>
+<p>空结构是没有任何字段的结构类型，例如：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">type</span> Q <span style="color:#268bd2">struct</span>{}
+<span style="color:#268bd2">var</span> q <span style="color:#268bd2">struct</span>{}
+</code></pre></div><p>既然没有任何字段，那它有什么用呢？</p>
+<p>我们知道，一个结构的实例的大小(即所占存储空间的字节数)是由其字段的宽度（size）和对齐（alignment）共同决定的，这样有助于寻址速度，C 语言等都有类似的策略，关于 Golang 的具体策略请阅读 <a href="https://golang.org/ref/spec#Size_and_alignment_guarantees">Size and alignment guarantees</a>。</p>
+<p>很显然，空结构的占用空间大小为零字节:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">var</span> q <span style="color:#268bd2">struct</span> {}
+fmt.<span style="color:#268bd2">Println</span>(unsafe.<span style="color:#268bd2">Sizeof</span>(q)) <span style="color:#586e75">// 0
+</span></code></pre></div><p>由于空结构占用零字节，因此不需要填充对齐，所以由嵌套空结构的空结构也不会占用存储空间。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">type</span> Q <span style="color:#268bd2">struct</span> {
+        A <span style="color:#268bd2">struct</span>{}
+        B <span style="color:#268bd2">struct</span>{
+            C <span style="color:#268bd2">struct</span>{}
+        }
+}
+<span style="color:#268bd2">var</span> q Q
+fmt.<span style="color:#268bd2">Println</span>(unsafe.<span style="color:#268bd2">Sizeof</span>(q)) <span style="color:#586e75">// 0
+</span></code></pre></div><p>由于空结构不占用内存空间，所以我们声明以空结构作为元素的数组或切片，也是不占用空间的（<a href="https://arschles.svbtle.com/orthogonality-in-go">Orthogonality in Go</a>）：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">var</span> x [<span style="color:#2aa198">1000000000</span>]<span style="color:#268bd2">struct</span>{}
+fmt.<span style="color:#268bd2">Println</span>(unsafe.<span style="color:#268bd2">Sizeof</span>(x)) <span style="color:#586e75">// 0
+</span><span style="color:#586e75"></span>
+<span style="color:#268bd2">var</span> y = <span style="color:#b58900">make</span>([]<span style="color:#268bd2">struct</span>{}，<span style="color:#2aa198">1000000000</span>)
+fmt.<span style="color:#268bd2">Println</span>(unsafe.<span style="color:#268bd2">Sizeof</span>(x))<span style="color:#586e75">// 24，背后关联数组为 0
+</span></code></pre></div><p>对于空结构（或者空数组），其占用的存储大小为零，所以两个不同的零大小的变量在内存中<a href="https://golang.org/ref/spec#Size_and_alignment_guarantees">可能具有相同的地址</a>。</p>
+<p>来看下面几个示例：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">var</span> a, b <span style="color:#268bd2">struct</span>{}
+fmt.<span style="color:#268bd2">Println</span>(<span style="color:#719e07">&amp;</span>a <span style="color:#719e07">==</span> <span style="color:#719e07">&amp;</span>b)  <span style="color:#586e75">// true
+</span><span style="color:#586e75"></span>
+
+c <span style="color:#719e07">:=</span> <span style="color:#b58900">make</span>([]<span style="color:#268bd2">struct</span>{}, <span style="color:#2aa198">10</span>)
+d <span style="color:#719e07">:=</span> <span style="color:#b58900">make</span>([]<span style="color:#268bd2">struct</span>{}, <span style="color:#2aa198">20</span>)
+fmt.<span style="color:#268bd2">Println</span>(<span style="color:#719e07">&amp;</span>c[<span style="color:#2aa198">0</span>] <span style="color:#719e07">==</span> <span style="color:#719e07">&amp;</span>d[<span style="color:#2aa198">1</span>]) <span style="color:#586e75">// true
+</span><span style="color:#586e75"></span>
+
+<span style="color:#268bd2">type</span> Q <span style="color:#268bd2">struct</span>{}
+
+<span style="color:#268bd2">func</span> (q <span style="color:#719e07">*</span>Q)<span style="color:#268bd2">addr</span>() { fmt.<span style="color:#268bd2">Printf</span>(<span style="color:#2aa198">&#34;%p\n&#34;</span>, q) }
+
+<span style="color:#268bd2">func</span> <span style="color:#268bd2">main</span>() {
+        <span style="color:#268bd2">var</span> a, b Q
+        a.<span style="color:#268bd2">addr</span>()  <span style="color:#586e75">// 0x5af5a60
+</span><span style="color:#586e75"></span>        b.<span style="color:#268bd2">addr</span>()  <span style="color:#586e75">// 0x5af5a60
+</span><span style="color:#586e75"></span>}
+
+e <span style="color:#719e07">:=</span> <span style="color:#268bd2">struct</span>{}{} <span style="color:#586e75">// 不是零值，一个真正的实例
+</span><span style="color:#586e75"></span>f <span style="color:#719e07">:=</span> <span style="color:#268bd2">struct</span>{}{}
+fmt.<span style="color:#268bd2">Println</span>(e <span style="color:#719e07">==</span> f) <span style="color:#586e75">// true
+</span></code></pre></div><p>请注意，这种相等只是可能，并不是一定的。</p>
+<p>比如这个<a href="https://play.golang.org/p/9C0puRUstrP">示例</a>，相关问题解释请看这个 <a href="https://github.com/golang/go/issues/23440">issue</a>。</p>
+<p>说了半天，你可能会想，貌似这些也没什么实际的用途啊，下面列举两个比较实用的实践用途：</p>
+<p><strong>1.</strong> <strong>使用 <code>chan struct{}</code> 代替 <code>chan bool</code> 在 goroutines 之间传递信号</strong>。使用 <code>bool</code> 容易让人不理解该值，<code>true</code> or <code>false</code>，但是使用 <code>chan struct{}</code> 就很清楚，我们不在乎值，只关心发生的事儿，更容易表达清楚一些。</p>
+<p><strong>2.</strong> 为了防止 unkeyed 初始化结构，可以添加 <code>_ struct {}</code> 字段：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#268bd2">type</span> Q <span style="color:#268bd2">struct</span> {
+  X, Y <span style="color:#dc322f">int</span>
+  _    <span style="color:#268bd2">struct</span>{}
+</code></pre></div><p>这样一来，使用 <code>Q{X: 1, Y: 1}</code> 可以，但使用 <code>Q{1, 1}</code> 就会出现编译错误：<code>too few values in struct initializer</code>，同时这样也帮助了 <code>go ver</code> 代码检查。</p>
+<h1 id="参考">参考</h1>
+<ul>
+<li><a href="https://golang.org/ref/spec">The Go Programming Language Specification</a></li>
+<li><a href="https://golang.org/doc/faq">Golang Frequently Asked Questions</a></li>
+<li><a href="https://codefibershq.com/blog/golang-why-nil-is-not-always-nil">Why Golang Nil Is Not Always Nil? Nil Explained</a></li>
+</ul>
+
+		</div>
+		<br>
+		
+		
+		<hr>
+			<footer class="post__footer">
+				
+<div class="post__tags tags clearfix">
+	<svg class="tags__badge icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/%E5%9F%BA%E7%A1%80%E5%8E%9F%E7%90%86/" rel="tag">基础原理</a></li>
+	</ul>
+</div>
+			</footer>
+		
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<a href="/about">
+			<img alt="关于 feileo avatar" src="https://cdn.at7h.com/img/avatar.jpg" class="avatar" height="90"
+				width="90">
+		</a>
+	</figure>
+	<div class="authorbox__header">
+		<a href="/about">
+			<span class="authorbox__name">关于 feileo</span>
+		</a>
+	</div>
+	<div class="authorbox__description">
+		You may say I&#39;m a dreamer, but I&#39;m not the only one.
+	</div>
+	<div class="authorbox__description_sub">
+		--John Winston Lennon 《Imagine》
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/posts/my-dotfiles/" rel="prev"><span class="post-nav__caption">«&thinsp;上一篇</span><p class="post-nav__post-title">武器修炼之 Neo/vim 与 Tmux</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/posts/helo/" rel="next"><span class="post-nav__caption">下一篇&thinsp;»</span><p class="post-nav__post-title">Helo 快速上手指南</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+    <div id="utter-container"></div>
+    <script src="https://utteranc.es/client.js"
+        repo= 'feileo/feileo.github.io'
+        issue-term= "pathname"
+        theme= 'github-light'
+        crossorigin= "anonymous",
+        label='✨💬✨'
+        async>
+	</script> 
+</section>
+
+
+
+			</div>
+			
+		</div>
+		<footer class="footer">
+	<div>
+		
+		<div class="footer__copyright">
+			<div class="footer__text">
+				<p>本博客基于 <a href="https://golang.google.cn/" target="_blank"> Golang </a> + <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> +  <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> 构建</p>
+        <p>本站由 <a href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral" target="_blank"><img width="50" src="https://cdn.at7h.com/img/upyun_logo.png"></a> 提供 CDN 加速/静态资源存储服务</p>
+				<p>由 <a href="https://utteranc.es/" target="_blank"><img width="19" src="https://cdn.at7h.com/img/utteranc.png"> utterances</a> 提供评论系统</p>
+				<p>
+					<span id="busuanzi_container_site_pv">
+						本站运行自 2020-10-01,
+						累计 PV
+						1<span id="busuanzi_value_site_pv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>,
+					<span id="busuanzi_container_site_uv">
+						UV <span id="busuanzi_value_site_uv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>
+				</p>
+		<p>
+			<a target="_blank" href="/sitemap.xml">站点地图</a> &nbsp;·&nbsp; 
+			<a target="_blank" href="/index.xml" type="application/rss+xml" title="rss"> RSS 
+			</a>
+		</p>
+        <p>版权所有 &copy; 2021 at7h.com</p>
+        
+
+			</div>
+		</div>
+		<div class="footer__text__sub">
+			<a target="_blank" href="http://beian.miit.gov.cn">京 ICP 备 2020037066 号 - 1</a>
+			<br>
+			<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=61092802000118">
+				<img style="vertical-align: text-bottom;" width="18" src="https://cdn.at7h.com/img/beian.png">
+				陕公网安备 61092802000118 号
+      </a>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+</body>
+</html>

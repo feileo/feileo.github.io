@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="baidu-site-verification" content="0iFDP8mhHL" />
+	<title>
+		
+			
+				Python 可迭代对象, 迭代器与生成器 -
+			
+			feileo
+		 的博客
+	</title>
+	<script>
+		(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");
+	</script>
+	<meta name="description" content="这篇文章主要讨论下 Python 中的容器迭代协议，它的实现统一约定了容器对象的迭代方案，允许自定义类对迭代的支持。在 Python 中有很多的协议，比如迭代器协议，描述器协议等等，它类似于其他面向对象语言中接口的概念 ...">
+	
+		<meta property="og:title" content="Python 可迭代对象, 迭代器与生成器" />
+<meta property="og:description" content="这篇文章主要讨论下 Python 中的容器迭代协议，它的实现统一约定了容器对象的迭代方案，允许自定义类对迭代的支持。在 Python 中有很多的协议，比如迭代器协议，描述器协议等等，它类似于其他面向对象语言中接口的概念 ..." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://at7h.com/posts/iter/" />
+<meta property="article:published_time" content="2020-07-14T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-07-14T00:00:00+00:00" />
+
+	
+	
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	
+	<link rel="shortcut icon" href="/img/favicon.ico">
+	
+		
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-155215466-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+	<link rel="stylesheet" href="/highlight/styles/atom-one-dark.css">
+
+	<script src="/js/jquery.min.js"></script>
+	<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+	<script src="/highlight/highlight.pack.js" type='text/javascript'></script>
+	
+	<script type="text/javascript">
+	$(document).ready(function(){
+    hljs.initHighlightingOnLoad();
+		
+	});
+
+	(function(){
+		var bp = document.createElement('script');
+		var curProtocol = window.location.protocol.split(':')[0];
+		if (curProtocol === 'https') {
+			bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+		}
+		else {
+			bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+		}
+		var s = document.getElementsByTagName("script")[0];
+		s.parentNode.insertBefore(bp, s);
+  	})();
+	</script>
+</head>
+
+<body class="body">
+	<div class="container container--outer">
+		<header class="header">
+    <div class="container">
+        <div class="logo">
+            <a class="logo__link" href="/" title="feileo" rel="home">
+              <div class="logo__title">
+								feileo  
+							</div>
+							
+							<div class="logo__tagline">关注互联网开发技术，记录、总结与分享 👣</div>
+							
+						</a>
+						
+        </div>
+        
+
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1"><svg t="1571404030009" class="meta__icon icon icon-list" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1829" width="20" height="20"><path d="M892.928 128q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 448.512q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 769.024q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0z" p-id="1830" fill="#1e90ff"></path></svg></span>
+	</button>
+	<mul class="menu__list">
+		
+		<li class="menu__item">
+			<a class="menu__link__home" href="/"><svg t="1571149675735" class="meta__icon icon icon-home" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3856" width="22" height="22"><path d="M230.4 992c-64 0-115.2-51.2-115.2-115.2L115.2 544 76.8 582.4C70.4 588.8 57.6 595.2 44.8 595.2c-12.8 0-25.6-6.4-32-12.8C6.4 569.6 0 556.8 0 544 0 537.6 6.4 524.8 12.8 512l467.2-467.2C486.4 38.4 499.2 32 512 32s25.6 6.4 32 12.8L1011.2 512C1017.6 524.8 1024 537.6 1024 544c0 12.8-6.4 25.6-12.8 32-6.4 6.4-19.2 12.8-32 12.8s-25.6-6.4-32-12.8L512 147.2 211.2 448l0 422.4c0 12.8 12.8 25.6 25.6 25.6l115.2 0 0-185.6c0-25.6 19.2-44.8 44.8-44.8l230.4 0c25.6 0 44.8 19.2 44.8 44.8s-19.2 44.8-44.8 44.8L441.6 755.2l0 185.6c0 25.6-19.2 44.8-44.8 44.8L230.4 985.6zM627.2 992c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8l160 0c12.8 0 25.6-12.8 25.6-25.6l0-256c0-25.6 19.2-44.8 44.8-44.8 25.6 0 44.8 19.2 44.8 44.8l0 256c0 64-51.2 115.2-115.2 115.2L627.2 992z" p-id="3857" fill="#ffffff"></path></svg></a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/python">Python</a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/golang">Golang</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/vim">Vim</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link" href="/categories/tool">效率工具</a>
+			
+		</li>
+		
+		
+		
+		
+		
+	</mul>
+</nav>
+
+    </div>
+</header>
+
+
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<div class="post__title">Python 可迭代对象, 迭代器与生成器</div>
+			<div class="post__meta meta">
+					
+<div class="meta__item-categories meta__item">
+	<svg t="1571148699121" class="meta__icon icon icon-category" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5705" width="16" height="16"><path d="M853.333333 938.666667 42.666667 938.666667c-25.6 0-42.666667-17.066667-42.666667-42.666667L0 128c0-25.6 17.066667-42.666667 42.666667-42.666667l298.666667 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 42.666667 469.333333 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 170.666667c0 25.6-17.066667 42.666667-42.666667 42.666667s-42.666667-17.066667-42.666667-42.666667L810.666667 256 341.333333 256C315.733333 256 298.666667 238.933333 298.666667 213.333333L298.666667 170.666667 85.333333 170.666667l0 682.666667 768 0c25.6 0 42.666667 17.066667 42.666667 42.666667S878.933333 938.666667 853.333333 938.666667z" p-id="5706" fill="#515151"></path><path d="M853.333333 938.666667 42.666667 938.666667c-12.8 0-25.6-4.266667-34.133333-17.066667S0 900.266667 0 887.466667l128-512C132.266667 354.133333 149.333333 341.333333 170.666667 341.333333l810.666667 0c12.8 0 25.6 4.266667 34.133333 17.066667S1024 379.733333 1024 392.533333l-128 512C891.733333 925.866667 874.666667 938.666667 853.333333 938.666667zM98.133333 853.333333l721.066667 0 106.666667-426.666667L204.8 426.666667 98.133333 853.333333z" p-id="5707" fill="#515151"></path></svg>
+	<span class="meta__text">
+		
+		<a class="meta__link" href="/categories/python" rel="category">
+			
+			Python
+			
+		</a>
+		
+	</span>
+</div>
+
+<div class="meta__item-datetime meta__item">
+	<svg t="1571148896140" class="meta__icon icon icon-date" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8190" width="16" height="16"><path d="M883.278513 148.539035l-43.016723 0 0-12.780071c0-38.310537-31.199583-69.632917-69.323878-69.632917l-1.02433 0c-38.129412 0-69.323878 31.321356-69.323878 69.632917l0 12.780071L317.20292 148.539035l0-12.780071c0-38.310537-31.195489-69.632917-69.323878-69.632917l-1.055029 0c-38.127366 0-69.322855 31.321356-69.322855 69.632917l0 12.780071-42.924625 0c-38.127366 0-69.323878 31.351032-69.323878 69.609381l0 665.701614c0 38.309514 31.195489 69.632917 69.323878 69.632917l748.70198 0c38.127366 0 69.322855-31.323403 69.322855-69.632917l0-665.701614C952.601368 179.890067 921.405879 148.539035 883.278513 148.539035L883.278513 148.539035zM728.318232 135.758963c0-23.024389 18.632359-41.777499 41.594327-41.777499l1.02433 0c22.931269 0 41.593304 18.753109 41.593304 41.777499L812.530193 259.615852c0 23.024389-18.662035 41.778522-41.593304 41.778522l-1.02433 0c-22.961968 0-41.594327-18.754133-41.594327-41.778522L728.318232 135.758963 728.318232 135.758963zM205.23071 135.758963c0-23.024389 18.632359-41.777499 41.599444-41.777499l1.048889 0c22.903639 0 41.594327 18.753109 41.594327 41.777499L289.473369 259.615852c0 23.024389-18.691711 41.778522-41.594327 41.778522l-1.048889 0c-22.967084 0-41.599444-18.754133-41.599444-41.778522L205.23071 135.758963 205.23071 135.758963zM883.278513 897.807926l-748.70198 0c-7.519254 0-13.864776-6.468318-13.864776-13.957897L120.711757 394.394489l776.433578 0 0 489.455541C897.144312 891.338584 890.797767 897.807926 883.278513 897.807926L883.278513 897.807926zM222.614635 494.083955l127.918391 0 0 62.950727L222.614635 557.034682 222.614635 494.083955 222.614635 494.083955zM445.963493 494.083955l126.906342 0 0 62.950727L445.963493 557.034682 445.963493 494.083955 445.963493 494.083955zM668.299277 494.083955l124.873032 0 0 62.950727L668.299277 557.034682 668.299277 494.083955 668.299277 494.083955zM222.614635 622.00951l127.918391 0 0 61.927421L222.614635 683.936931 222.614635 622.00951 222.614635 622.00951zM445.963493 622.00951l126.906342 0 0 61.927421L445.963493 683.936931 445.963493 622.00951 445.963493 622.00951zM668.299277 622.00951l124.873032 0 0 61.927421L668.299277 683.936931 668.299277 622.00951 668.299277 622.00951zM222.614635 746.884588l127.918391 0 0 64.97278L222.614635 811.857369 222.614635 746.884588 222.614635 746.884588zM445.963493 746.884588l126.906342 0 0 64.97278L445.963493 811.857369 445.963493 746.884588 445.963493 746.884588zM668.299277 746.884588l124.873032 0 0 64.97278L668.299277 811.857369 668.299277 746.884588 668.299277 746.884588zM668.299277 746.884588" p-id="8191" fill="#515151"></path></svg>
+	更新于 <time class="meta__text" datetime="2020-07-14T00:00:00">2020-07-14</time>
+</div>
+
+<div class="meta__item-word_count meta__item">
+	<svg t="1571149110363" class="meta__icon icon icon-wordcount" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1792" width="16" height="16"><path d="M286.722048 405.987328l0 477.058048-132.51584 0L154.206208 405.987328 286.722048 405.987328M313.22624 352.980992 127.70304 352.980992c-14.636032 0-26.503168 11.867136-26.503168 26.503168L101.199872 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.5232 0c14.636032 0 26.503168-11.867136 26.503168-26.503168L339.729408 379.483136C339.729408 364.847104 327.862272 352.980992 313.22624 352.980992L313.22624 352.980992zM577.998848 563.557376l0 319.488L445.476864 883.045376l0-319.488L577.998848 563.557376M604.502016 510.543872l-185.52832 0c-14.636032 0-26.503168 11.859968-26.503168 26.510336L392.470528 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.52832 0c14.623744 0 26.504192-11.867136 26.504192-26.503168L631.006208 537.054208c0-14.623744-11.880448-26.497024-26.504192-26.497024l0 0L604.502016 510.543872zM869.792768 140.954624l0 742.090752L737.5104 883.045376l0-742.090752L869.792768 140.954624M896.29696 87.948288 711.007232 87.948288c-14.649344 0-26.503168 11.867136-26.503168 26.503168L684.504064 909.54752c0 14.636032 11.853824 26.503168 26.503168 26.503168L896.29696 936.050688c14.636032 0 26.503168-11.867136 26.503168-26.503168l0-795.096064C922.800128 99.815424 910.932992 87.948288 896.29696 87.948288L896.29696 87.948288z" p-id="1793" fill="#515151"></path></svg>
+    约 <span class="meta__text">2316</span> 个字
+</div>
+
+<div class="meta__item-reading_time meta__item">
+	<svg t="1571149199980" class="meta__icon icon icon-time" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2748" width="16" height="16"><path d="M512 64C264.96 64 64 264.96 64 512s200.96 448 448 448 448-200.96 448-448S759.04 64 512 64zM512 895.712c-211.584 0-383.712-172.16-383.712-383.712C128.288 300.416 300.416 128.288 512 128.288c211.552 0 383.712 172.128 383.712 383.712C895.712 723.552 723.552 895.712 512 895.712z" p-id="2749" fill="#515151"></path><path d="M671.968 512 512 512 512 288.064c0-17.76-14.24-32.128-32-32.128s-32 14.4-32 32.128L448 544c0 17.76 14.272 32 32 32l191.968 0c17.76 0 32.128-14.24 32.128-32S689.728 512 671.968 512z" p-id="2750" fill="#515151"></path></svg>    
+    阅读约需 <span class="meta__text">
+        
+            5
+         m</span>
+</div>
+
+						<div class="meta__item-page_pv meta__item">
+    
+    <span class="meta__text">
+        <span id="busuanzi_container_page_pv">
+            
+        </span>
+    </span>
+</div>
+				</div>
+		</header>
+		<div class="content post__content clearfix">
+			<p>这篇文章主要讨论下 Python 中的容器迭代协议，它的实现统一约定了容器对象的迭代方案，允许我们自定义类对迭代的支持。在 Python 中有很多的协议，比如<strong>迭代器协议</strong>，<a href="https://docs.python.org/zh-cn/3/howto/descriptor.html#descriptor-protocol"><strong>描述器协议</strong></a>等等，这些<strong>协议</strong>比较类似于其他面向对象语言中<strong>接口</strong>的概念。</p>
+<p>本文主要介绍内容为可迭代对象、迭代器和生成器。</p>
+<h1 id="可迭代对象iterable">可迭代对象(iterable)</h1>
+<p>以通俗简单的方式来讲，可迭代对象就是<strong>能够逐一返回其成员项的对象</strong>，其可用于 <code>for</code> 循环以及许多其他需要一个序列的地方 <code>zip</code>、<code>map</code> 等等。例如：</p>
+<ul>
+<li>序列(sequence)类型： 如 <code>list</code>, <code>str</code>, <code>tuple</code>, <code>bytes</code> 等</li>
+<li>非序列类型类型如：<code>dict</code>, 文件对象等</li>
+</ul>
+<p>严格来说，可迭代对象是<strong>任何实现了 <code>__iter__()</code> 方法或者实现了序列(Sequence)语义中的 <code>__getitem__()</code> 方法的任意自定义类对象</strong>。</p>
+<p>那么下面我们分别来讨论下这两种实现方案。</p>
+<h3 id="1-实现-__iter__">1. 实现 __iter__</h3>
+<p>这种方式是你必须为你的类实现 <code>__iter__()</code>方法，该方法返回的必须是一个<strong>迭代器</strong>对象，下面会讲到。</p>
+<h3 id="2-实现-__getitem__">2. 实现 __getitem__</h3>
+<p>序列(Sequence)的迭代通过实现 <code>__getitem__()</code> 方法来使用<strong>整数索引</strong>进行<strong>高效</strong>的元素访问。同时，你必须为其定义一个返回序列长度的 <code>__len__()</code> 方法。例如上面例子中的 <code>list</code>, <code>str</code>, <code>tuple</code>, <code>bytes</code>。序列数据结构的存储是一段连续的内存空间，其直接使用整数索引进行寻址，查找元素非常高效，但是插入删除元素时效率低下。</p>
+<p>有的童鞋会说，<code>dict</code> 也实现了 <code>__getitem__</code> 和 <code>__len__</code> 协议，为毛 <code>dict</code> 不属于序列？<u>原因是它并不是通过<strong>整数索引</strong>来顺序迭代</u>，而是通过任意的不可变键(immutable key) 来进行逐个查找的。所以 <code>dict</code> 的迭代还是因为其实现了 <code>__iter__</code>。</p>
+<h2 id="工作方式">工作方式</h2>
+<p>当把一个可迭代对象 <code>x</code> 作为参数传给内置函数 <code>iter()</code> 时，它会返回该对象的<strong>迭代器</strong>以供迭代。但通常我们并不需要这么搞，当我们使用 <code>for</code> 对可迭代对象进行遍历时，<code>for</code> 语句会为你自动处理那些操作，即自动调用 <code>iter(x)</code> 来获取迭代器，若对象没有实现<code>__iter__()</code>方法，而实现了方式二的 <code>__getitem__</code> 和 <code>__len__</code> 协议，其会自动创建一个迭代器，并尝试从索引 0 开始获取元素，若尝试失败，会引发一个 <code>TypeError</code>。</p>
+<h2 id="类型断言">类型断言</h2>
+<p>判断一个对象是否是一个可迭代对象，可以使用 <code>collections.abc.Iterable</code>。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">1</span>]: <span style="color:#719e07">from</span> collections.abc <span style="color:#719e07">import</span> Iterable
+
+In [<span style="color:#2aa198">2</span>]: <span style="color:#b58900">isinstance</span>([<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>, <span style="color:#2aa198">3</span>], Iterable)
+Out[<span style="color:#2aa198">2</span>]: <span style="color:#268bd2">True</span>
+
+In [<span style="color:#2aa198">3</span>]: <span style="color:#b58900">isinstance</span>(<span style="color:#2aa198">1</span>, Iterable)
+Out[<span style="color:#2aa198">3</span>]: <span style="color:#268bd2">False</span>
+
+In [<span style="color:#2aa198">4</span>]: <span style="color:#b58900">isinstance</span>(<span style="color:#2aa198">&#39;1&#39;</span>, Iterable)
+Out[<span style="color:#2aa198">4</span>]: <span style="color:#268bd2">True</span>
+
+In [<span style="color:#2aa198">5</span>]: <span style="color:#b58900">isinstance</span>({}, Iterable)
+Out[<span style="color:#2aa198">5</span>]: <span style="color:#268bd2">True</span>
+</code></pre></div><h1 id="迭代器iterator">迭代器(iterator)</h1>
+<p>上面多次提到了迭代器，那么什么是迭代器？即<strong>实现了迭代器协议</strong>的对象就是一个迭代器，迭代器协议由 <code>__iter__()</code> 和 <code>__next__()</code> 共同组成。以 Golang 接口的思维理解就是任何实现了这俩方法的对象就是迭代器。</p>
+<p>是的，又有 <code>__iter__()</code>，所以<strong>迭代器必定也是可迭代对象</strong>。在迭代器中:</p>
+<ul>
+<li><code>__iter__()</code> 必须返回迭代器对象本身。</li>
+<li><code>__next__()</code> 应从容器中返回下一项，如果已经没有数据项可返回时，则需引发 <code>StopIteration</code> 异常，继续调用其 <code>__next__()</code> 应再次引发 <code>StopIteration</code> 异常。</li>
+</ul>
+<p>所以一个迭代器应有的样子应该是这样的：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">Iterator</span>:
+
+    <span style="color:#719e07">def</span> __iter__(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">return</span> <span style="color:#268bd2">self</span>
+
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">__next__</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">pass</span>
+</code></pre></div><h2 id="工作方式-1">工作方式</h2>
+<p>迭代器用来表示一连串数据流的对象，当 <code>for</code> 语句自动返回可迭代对象的迭代器时，<code>for</code> 将重复调用其 <code>__next__()</code> 方法将逐个返回流中的项，直到迭代器引发 <code>StopIteration</code> 异常后终止循环。此时该迭代器数据项已耗尽，不能再使用。我们可以通过将迭代器传给 <code>next()</code> 函数来模拟:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">11</span>]: iterator <span style="color:#719e07">=</span> <span style="color:#b58900">iter</span>([<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>, <span style="color:#2aa198">3</span>]) <span style="color:#586e75"># 手动创建一个迭代器</span>
+
+In [<span style="color:#2aa198">12</span>]: <span style="color:#719e07">for</span> i <span style="color:#719e07">in</span> iterator:
+   <span style="color:#719e07">...</span>:     <span style="color:#719e07">print</span>(i)
+   <span style="color:#719e07">...</span>:
+<span style="color:#2aa198">1</span>
+<span style="color:#2aa198">2</span>
+<span style="color:#2aa198">3</span>
+
+In [<span style="color:#2aa198">13</span>]: <span style="color:#b58900">next</span>(iterator) <span style="color:#586e75"># 该迭代器已耗尽</span>
+<span style="color:#719e07">---------------------------------------------------------------------------</span>
+<span style="color:#cb4b16">StopIteration</span>                             Traceback (most recent call last)
+<span style="color:#719e07">&lt;</span>ipython<span style="color:#719e07">-</span><span style="color:#b58900">input</span><span style="color:#719e07">-</span><span style="color:#2aa198">13</span><span style="color:#719e07">-</span><span style="color:#2aa198">4</span>ce711c44abc<span style="color:#719e07">&gt;</span> <span style="color:#719e07">in</span> <span style="color:#719e07">&lt;</span>module<span style="color:#719e07">&gt;</span>
+<span style="color:#719e07">----&gt;</span> <span style="color:#2aa198">1</span> <span style="color:#b58900">next</span>(iterator)
+
+<span style="color:#cb4b16">StopIteration</span>:
+
+In [<span style="color:#2aa198">14</span>]: iterator <span style="color:#719e07">=</span> <span style="color:#b58900">iter</span>([<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>, <span style="color:#2aa198">3</span>])
+
+In [<span style="color:#2aa198">15</span>]: <span style="color:#b58900">next</span>(iterator)
+Out[<span style="color:#2aa198">15</span>]: <span style="color:#2aa198">1</span>
+
+In [<span style="color:#2aa198">16</span>]: <span style="color:#b58900">next</span>(iterator)
+Out[<span style="color:#2aa198">16</span>]: <span style="color:#2aa198">2</span>
+
+In [<span style="color:#2aa198">17</span>]: <span style="color:#b58900">next</span>(iterator)
+Out[<span style="color:#2aa198">17</span>]: <span style="color:#2aa198">3</span>
+
+In [<span style="color:#2aa198">18</span>]: <span style="color:#b58900">next</span>(iterator)
+<span style="color:#719e07">---------------------------------------------------------------------------</span>
+<span style="color:#cb4b16">StopIteration</span>                             Traceback (most recent call last)
+<span style="color:#719e07">&lt;</span>ipython<span style="color:#719e07">-</span><span style="color:#b58900">input</span><span style="color:#719e07">-</span><span style="color:#2aa198">18</span><span style="color:#719e07">-</span><span style="color:#2aa198">4</span>ce711c44abc<span style="color:#719e07">&gt;</span> <span style="color:#719e07">in</span> <span style="color:#719e07">&lt;</span>module<span style="color:#719e07">&gt;</span>
+<span style="color:#719e07">----&gt;</span> <span style="color:#2aa198">1</span> <span style="color:#b58900">next</span>(iterator)
+
+<span style="color:#cb4b16">StopIteration</span>:
+</code></pre></div><h2 id="类型">类型</h2>
+<p>判断一个对象是否是一个迭代器，可以使用 <code>collections.abc.Iterator</code>。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">31</span>]: <span style="color:#719e07">from</span> collections.abc <span style="color:#719e07">import</span> Iterator
+
+In [<span style="color:#2aa198">32</span>]: iterator <span style="color:#719e07">=</span> <span style="color:#b58900">iter</span>([<span style="color:#2aa198">1</span>, <span style="color:#2aa198">2</span>, <span style="color:#2aa198">3</span>])
+
+In [<span style="color:#2aa198">33</span>]: <span style="color:#b58900">isinstance</span>(iterator, Iterator)
+Out[<span style="color:#2aa198">33</span>]: <span style="color:#268bd2">True</span>
+
+In [<span style="color:#2aa198">34</span>]: <span style="color:#b58900">isinstance</span>([],Iterator)
+Out[<span style="color:#2aa198">34</span>]: <span style="color:#268bd2">False</span>
+</code></pre></div><h2 id="练习">练习</h2>
+<p>通过上面的介绍，你可能或多或少的了解了什么是可迭代对象 <strong>iterable</strong>，什么是迭代器 <strong>iterator</strong>。一句话简单的总结就是，当我们对可迭代对象进行迭代时，就从可迭代对象获取迭代器进行迭代。</p>
+<p>下面我们来写一个非常简单的一段文本处理的示例，从下面一段 HTML 文本中提取出所有 <code>a</code> 标签的 <code>href</code>。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">TEXT <span style="color:#719e07">=</span> (<span style="color:#2aa198">&#39;&lt;div&gt;&lt;a href=&#34;https://blog.python.org&#34; title=&#34;More News&#34;&gt;More&lt;/a&gt;&lt;ul class=&#34;menu&#34;&gt;&#39;</span>
+        <span style="color:#2aa198">&#39;&lt;li&gt;&lt;a href=&#34;http://feedproxy.google.com/~r/PythonSoftwareFoundationNew/~3/T3r7qZxo-xg&#39;</span>
+        <span style="color:#2aa198">&#39;/python-software-foundation-fellow.html&#34;&gt;Python Software Foundation Fellow Members for&#39;</span>
+        <span style="color:#2aa198">&#39;Q3 2019&lt;/a&gt;&lt;/li&gt;&lt;li&gt; &lt;a href=&#34;http://feedproxy.google.com/~r/PythonSoftwareFoundationNews&#39;</span>
+        <span style="color:#2aa198">&#39;/~3/lE0u-5MIUQc/why-sponsor-pycon-2020.html&#34;&gt;Why Sponsor PyCon 2020?&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=&#39;</span>
+        <span style="color:#2aa198">&#39;&#34;http://feedproxy.google.com/~r/PythonSoftwareFoundationNews/~3/jAMRqiPhWSs/seeking-developers&#39;</span>
+        <span style="color:#2aa198">&#39;-for-paid-contract.html&#34;&gt;Developers for Paid Contract Improving pip&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&#39;</span>)
+</code></pre></div><div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">LinkFinder</span>:
+
+    PATTERN <span style="color:#719e07">=</span> <span style="color:#2aa198">&#34;(?&lt;=href=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">)|(?&lt;=href=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">)&#34;</span>
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, text):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links <span style="color:#719e07">=</span> re<span style="color:#719e07">.</span>findall(<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>PATTERN, text)
+
+    <span style="color:#719e07">def</span> __iter__(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">return</span> LinkIiterator(<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links)
+
+<span style="color:#719e07">class</span> <span style="color:#268bd2">LinkIiterator</span>:
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, links):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links <span style="color:#719e07">=</span> links
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>index <span style="color:#719e07">=</span> <span style="color:#2aa198">0</span>
+
+    <span style="color:#719e07">def</span> __iter__(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">return</span> <span style="color:#268bd2">self</span>
+
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">__next__</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">try</span>:
+            link <span style="color:#719e07">=</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links[<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>index]
+        <span style="color:#719e07">except</span> <span style="color:#cb4b16">IndexError</span>:
+            <span style="color:#719e07">raise</span> <span style="color:#cb4b16">StopIteration</span>
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>index <span style="color:#719e07">+=</span> <span style="color:#2aa198">1</span>
+        <span style="color:#719e07">return</span> link
+</code></pre></div><p>稍稍验证一下:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">39</span>]: <span style="color:#719e07">for</span> link <span style="color:#719e07">in</span> LinkFinder(TEXT):
+    <span style="color:#719e07">...</span>:     <span style="color:#719e07">print</span>(link)
+    <span style="color:#719e07">...</span>:
+https:<span style="color:#719e07">//</span>blog<span style="color:#719e07">.</span>python<span style="color:#719e07">.</span>org
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNew<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>T3r7qZxo<span style="color:#719e07">-</span>xg<span style="color:#719e07">/</span>python<span style="color:#719e07">-</span>software<span style="color:#719e07">-</span>foundation<span style="color:#719e07">-</span>fellow<span style="color:#719e07">.</span>html
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNews<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>lE0u<span style="color:#719e07">-</span><span style="color:#2aa198">5</span>MIUQc<span style="color:#719e07">/</span>why<span style="color:#719e07">-</span>sponsor<span style="color:#719e07">-</span>pycon<span style="color:#719e07">-</span><span style="color:#2aa198">2020.</span>html
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNews<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>jAMRqiPhWSs<span style="color:#719e07">/</span>seeking<span style="color:#719e07">-</span>developers<span style="color:#719e07">-</span><span style="color:#719e07">for</span><span style="color:#719e07">-</span>paid<span style="color:#719e07">-</span>contract<span style="color:#719e07">.</span>html
+</code></pre></div><h1 id="生成器generator">生成器(generator)</h1>
+<p>看完上面的例子，有同学可能会想，能不能省掉 <code>LinkIiterator</code> 呢？有没有一种机制能够让 <code>__iter__()</code> 返回的对象自动提供 <code>__iter__()</code> 和 <code>__next__()</code> 方法呢？</p>
+<p>有，那就是生成器（generator）。</p>
+<p>一个包含 <code>yield</code> 的函数就是一个生成器函数(通常称其为生成器)，当其被调用的时，会返回一个迭代器，称为<strong>生成器迭代器</strong>(generator iterator)。<code>yield</code> 表达式会产生一系列值来供给 <code>for</code> 循环使用或是通过 <code>next()</code> 函数逐一获取。每个 <code>yield</code> 会临时暂停处理，记住当前位置执行状态(包括局部变量，指令指针，内部求值栈和任何异常处理的状态等)，当该生成器迭代器恢复时，它会从离开位置继续执行，这与每次调用都从新开始的普通函数差别很大。因本文主要讲迭代协议，所以关于生成器的实现部分暂不具体讨论。</p>
+<p>生成器机制提供了一种实现迭代器协议的<strong>便捷方式</strong>。 即如果我们把容器对象 <code>__iter__()</code> 方法实现为一个生成器，那么它将返回一个生成器迭代器对象(generator iterator)，该对象提供 <code>__iter__()</code> 和 <code>__next__()</code> 方法以供迭代。</p>
+<p>我们将上面的例子改成生成器版：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">LinkFinder</span>:
+
+    PATTERN <span style="color:#719e07">=</span> <span style="color:#2aa198">&#34;(?&lt;=href=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">)|(?&lt;=href=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">)&#34;</span>
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, text):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links <span style="color:#719e07">=</span> re<span style="color:#719e07">.</span>findall(<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>PATTERN, text)
+
+    <span style="color:#719e07">def</span> __iter__(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">for</span> link <span style="color:#719e07">in</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links:
+            <span style="color:#719e07">yield</span> link
+</code></pre></div><p>验证下：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">40</span>]: <span style="color:#719e07">for</span> link <span style="color:#719e07">in</span> LinkFinder(TEXT):
+    <span style="color:#719e07">...</span>:     <span style="color:#719e07">print</span>(link)
+    <span style="color:#719e07">...</span>:
+https:<span style="color:#719e07">//</span>blog<span style="color:#719e07">.</span>python<span style="color:#719e07">.</span>org
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNew<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>T3r7qZxo<span style="color:#719e07">-</span>xg<span style="color:#719e07">/</span>python<span style="color:#719e07">-</span>software<span style="color:#719e07">-</span>foundation<span style="color:#719e07">-</span>fellow<span style="color:#719e07">.</span>html
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNews<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>lE0u<span style="color:#719e07">-</span><span style="color:#2aa198">5</span>MIUQc<span style="color:#719e07">/</span>why<span style="color:#719e07">-</span>sponsor<span style="color:#719e07">-</span>pycon<span style="color:#719e07">-</span><span style="color:#2aa198">2020.</span>html
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNews<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>jAMRqiPhWSs<span style="color:#719e07">/</span>seeking<span style="color:#719e07">-</span>developers<span style="color:#719e07">-</span><span style="color:#719e07">for</span><span style="color:#719e07">-</span>paid<span style="color:#719e07">-</span>contract<span style="color:#719e07">.</span>html
+</code></pre></div><h3 id="优化">优化</h3>
+<p>本小节其实属于多余部分，关于迭代协议的讨论基本已经结束，但通过上面关于生成器的介绍我们发现，生成器迭代器与普通迭代器的一个显著区别就是，其往往是随用随生成，而不是一次性生成完毕，这在迭代大量数据时将非常有用，不用一次性计算或载入全部的数据到内存。所以上面的例子还有待优化。因为 <code>links</code> 列表是一次性计算好的。可以使用 <code>re.finditer</code> 方法，对 <code>links</code> 进行惰性求值：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">LinkFinder</span>:
+
+    PATTERN <span style="color:#719e07">=</span> <span style="color:#2aa198">&#34;(?&lt;=href=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">)|(?&lt;=href=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">)&#34;</span>
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, text):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links <span style="color:#719e07">=</span> re<span style="color:#719e07">.</span>finditer(<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>PATTERN, text)
+
+    <span style="color:#719e07">def</span> __iter__(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">for</span> link <span style="color:#719e07">in</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links:
+            <span style="color:#719e07">yield</span> link<span style="color:#719e07">.</span>group()
+</code></pre></div><p>还可以使用一种更加简洁的方式，即使用<strong>生成器表达式</strong>：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">def</span> __iter__(<span style="color:#268bd2">self</span>):
+    <span style="color:#719e07">return</span> (link<span style="color:#719e07">.</span>group() <span style="color:#719e07">for</span> link <span style="color:#719e07">in</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links)
+</code></pre></div><!-- https://docs.python.org/zh-cn/3/library/stdtypes.html#typeiter
+https://segmentfault.com/a/1190000013460584
+https://docs.python.org/zh-cn/3/glossary.html#term-asynchronous-iterator
+https://docs.python.org/zh-cn/3/reference/expressions.html#yieldexpr -->
+
+		</div>
+		<br>
+		
+		
+		<hr>
+			<footer class="post__footer">
+				
+<div class="post__tags tags clearfix">
+	<svg class="tags__badge icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/%E5%9F%BA%E7%A1%80%E5%8E%9F%E7%90%86/" rel="tag">基础原理</a></li>
+	</ul>
+</div>
+			</footer>
+		
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<a href="/about">
+			<img alt="关于 feileo avatar" src="https://cdn.at7h.com/img/avatar.jpg" class="avatar" height="90"
+				width="90">
+		</a>
+	</figure>
+	<div class="authorbox__header">
+		<a href="/about">
+			<span class="authorbox__name">关于 feileo</span>
+		</a>
+	</div>
+	<div class="authorbox__description">
+		You may say I&#39;m a dreamer, but I&#39;m not the only one.
+	</div>
+	<div class="authorbox__description_sub">
+		--John Winston Lennon 《Imagine》
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/posts/py-syspath/" rel="prev"><span class="post-nav__caption">«&thinsp;上一篇</span><p class="post-nav__post-title">闲侃 sys.path 与 buildout 实践</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/posts/py-slots/" rel="next"><span class="post-nav__caption">下一篇&thinsp;»</span><p class="post-nav__post-title">理解 Python 类属性 __slots__</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+    <div id="utter-container"></div>
+    <script src="https://utteranc.es/client.js"
+        repo= 'feileo/feileo.github.io'
+        issue-term= "pathname"
+        theme= 'github-light'
+        crossorigin= "anonymous",
+        label='✨💬✨'
+        async>
+	</script> 
+</section>
+
+
+
+			</div>
+			
+		</div>
+		<footer class="footer">
+	<div>
+		
+		<div class="footer__copyright">
+			<div class="footer__text">
+				<p>本博客基于 <a href="https://golang.google.cn/" target="_blank"> Golang </a> + <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> +  <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> 构建</p>
+        <p>本站由 <a href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral" target="_blank"><img width="50" src="https://cdn.at7h.com/img/upyun_logo.png"></a> 提供 CDN 加速/静态资源存储服务</p>
+				<p>由 <a href="https://utteranc.es/" target="_blank"><img width="19" src="https://cdn.at7h.com/img/utteranc.png"> utterances</a> 提供评论系统</p>
+				<p>
+					<span id="busuanzi_container_site_pv">
+						本站运行自 2020-10-01,
+						累计 PV
+						1<span id="busuanzi_value_site_pv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>,
+					<span id="busuanzi_container_site_uv">
+						UV <span id="busuanzi_value_site_uv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>
+				</p>
+		<p>
+			<a target="_blank" href="/sitemap.xml">站点地图</a> &nbsp;·&nbsp; 
+			<a target="_blank" href="/index.xml" type="application/rss+xml" title="rss"> RSS 
+			</a>
+		</p>
+        <p>版权所有 &copy; 2021 at7h.com</p>
+        
+
+			</div>
+		</div>
+		<div class="footer__text__sub">
+			<a target="_blank" href="http://beian.miit.gov.cn">京 ICP 备 2020037066 号 - 1</a>
+			<br>
+			<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=61092802000118">
+				<img style="vertical-align: text-bottom;" width="18" src="https://cdn.at7h.com/img/beian.png">
+				陕公网安备 61092802000118 号
+      </a>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+</body>
+</html>

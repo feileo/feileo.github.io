@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="baidu-site-verification" content="0iFDP8mhHL" />
+	<title>
+		
+			
+				Python3 协程(coroutine)介绍 -
+			
+			feileo
+		 的博客
+	</title>
+	<script>
+		(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");
+	</script>
+	<meta name="description" content="目前 Python 语言的协程从实现来说可分为两类，一种是基于传统生成器的协程 generator-based coroutines，一种在 Python 3.5 版本诞生，是通过使用 async 语法来声明的协程 native coroutines ...">
+	
+		<meta property="og:title" content="Python3 协程(coroutine)介绍" />
+<meta property="og:description" content="目前 Python 语言的协程从实现来说可分为两类，一种是基于传统生成器的协程 generator-based coroutines，一种在 Python 3.5 版本诞生，是通过使用 async 语法来声明的协程 native coroutines ..." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://at7h.com/posts/coroutine/" />
+<meta property="article:published_time" content="2020-06-10T00:00:00+00:00" />
+<meta property="article:modified_time" content="2020-06-10T00:00:00+00:00" />
+
+	
+	
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	
+	<link rel="shortcut icon" href="/img/favicon.ico">
+	
+		
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-155215466-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+	<link rel="stylesheet" href="/highlight/styles/atom-one-dark.css">
+
+	<script src="/js/jquery.min.js"></script>
+	<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+	<script src="/highlight/highlight.pack.js" type='text/javascript'></script>
+	
+	<script type="text/javascript">
+	$(document).ready(function(){
+    hljs.initHighlightingOnLoad();
+		
+	});
+
+	(function(){
+		var bp = document.createElement('script');
+		var curProtocol = window.location.protocol.split(':')[0];
+		if (curProtocol === 'https') {
+			bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+		}
+		else {
+			bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+		}
+		var s = document.getElementsByTagName("script")[0];
+		s.parentNode.insertBefore(bp, s);
+  	})();
+	</script>
+</head>
+
+<body class="body">
+	<div class="container container--outer">
+		<header class="header">
+    <div class="container">
+        <div class="logo">
+            <a class="logo__link" href="/" title="feileo" rel="home">
+              <div class="logo__title">
+								feileo  
+							</div>
+							
+							<div class="logo__tagline">关注互联网开发技术，记录、总结与分享 👣</div>
+							
+						</a>
+						
+        </div>
+        
+
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1"><svg t="1571404030009" class="meta__icon icon icon-list" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1829" width="20" height="20"><path d="M892.928 128q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 448.512q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0zM892.928 769.024q28.672 0 48.64 19.968t19.968 48.64l0 52.224q0 28.672-19.968 48.64t-48.64 19.968l-759.808 0q-28.672 0-48.64-19.968t-19.968-48.64l0-52.224q0-28.672 19.968-48.64t48.64-19.968l759.808 0z" p-id="1830" fill="#1e90ff"></path></svg></span>
+	</button>
+	<mul class="menu__list">
+		
+		<li class="menu__item">
+			<a class="menu__link__home" href="/"><svg t="1571149675735" class="meta__icon icon icon-home" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3856" width="22" height="22"><path d="M230.4 992c-64 0-115.2-51.2-115.2-115.2L115.2 544 76.8 582.4C70.4 588.8 57.6 595.2 44.8 595.2c-12.8 0-25.6-6.4-32-12.8C6.4 569.6 0 556.8 0 544 0 537.6 6.4 524.8 12.8 512l467.2-467.2C486.4 38.4 499.2 32 512 32s25.6 6.4 32 12.8L1011.2 512C1017.6 524.8 1024 537.6 1024 544c0 12.8-6.4 25.6-12.8 32-6.4 6.4-19.2 12.8-32 12.8s-25.6-6.4-32-12.8L512 147.2 211.2 448l0 422.4c0 12.8 12.8 25.6 25.6 25.6l115.2 0 0-185.6c0-25.6 19.2-44.8 44.8-44.8l230.4 0c25.6 0 44.8 19.2 44.8 44.8s-19.2 44.8-44.8 44.8L441.6 755.2l0 185.6c0 25.6-19.2 44.8-44.8 44.8L230.4 985.6zM627.2 992c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8l160 0c12.8 0 25.6-12.8 25.6-25.6l0-256c0-25.6 19.2-44.8 44.8-44.8 25.6 0 44.8 19.2 44.8 44.8l0 256c0 64-51.2 115.2-115.2 115.2L627.2 992z" p-id="3857" fill="#ffffff"></path></svg></a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/python">Python</a>
+		</li>
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/golang">Golang</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link"
+				href="/categories/vim">Vim</a>
+		</li>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<li class="menu__item">
+			<a class="menu__link" href="/categories/tool">效率工具</a>
+			
+		</li>
+		
+		
+		
+		
+		
+	</mul>
+</nav>
+
+    </div>
+</header>
+
+
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<div class="post__title">Python3 协程(coroutine)介绍</div>
+			<div class="post__meta meta">
+					
+<div class="meta__item-categories meta__item">
+	<svg t="1571148699121" class="meta__icon icon icon-category" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5705" width="16" height="16"><path d="M853.333333 938.666667 42.666667 938.666667c-25.6 0-42.666667-17.066667-42.666667-42.666667L0 128c0-25.6 17.066667-42.666667 42.666667-42.666667l298.666667 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 42.666667 469.333333 0c25.6 0 42.666667 17.066667 42.666667 42.666667l0 170.666667c0 25.6-17.066667 42.666667-42.666667 42.666667s-42.666667-17.066667-42.666667-42.666667L810.666667 256 341.333333 256C315.733333 256 298.666667 238.933333 298.666667 213.333333L298.666667 170.666667 85.333333 170.666667l0 682.666667 768 0c25.6 0 42.666667 17.066667 42.666667 42.666667S878.933333 938.666667 853.333333 938.666667z" p-id="5706" fill="#515151"></path><path d="M853.333333 938.666667 42.666667 938.666667c-12.8 0-25.6-4.266667-34.133333-17.066667S0 900.266667 0 887.466667l128-512C132.266667 354.133333 149.333333 341.333333 170.666667 341.333333l810.666667 0c12.8 0 25.6 4.266667 34.133333 17.066667S1024 379.733333 1024 392.533333l-128 512C891.733333 925.866667 874.666667 938.666667 853.333333 938.666667zM98.133333 853.333333l721.066667 0 106.666667-426.666667L204.8 426.666667 98.133333 853.333333z" p-id="5707" fill="#515151"></path></svg>
+	<span class="meta__text">
+		
+		<a class="meta__link" href="/categories/python" rel="category">
+			
+			Python
+			
+		</a>
+		
+	</span>
+</div>
+
+<div class="meta__item-datetime meta__item">
+	<svg t="1571148896140" class="meta__icon icon icon-date" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8190" width="16" height="16"><path d="M883.278513 148.539035l-43.016723 0 0-12.780071c0-38.310537-31.199583-69.632917-69.323878-69.632917l-1.02433 0c-38.129412 0-69.323878 31.321356-69.323878 69.632917l0 12.780071L317.20292 148.539035l0-12.780071c0-38.310537-31.195489-69.632917-69.323878-69.632917l-1.055029 0c-38.127366 0-69.322855 31.321356-69.322855 69.632917l0 12.780071-42.924625 0c-38.127366 0-69.323878 31.351032-69.323878 69.609381l0 665.701614c0 38.309514 31.195489 69.632917 69.323878 69.632917l748.70198 0c38.127366 0 69.322855-31.323403 69.322855-69.632917l0-665.701614C952.601368 179.890067 921.405879 148.539035 883.278513 148.539035L883.278513 148.539035zM728.318232 135.758963c0-23.024389 18.632359-41.777499 41.594327-41.777499l1.02433 0c22.931269 0 41.593304 18.753109 41.593304 41.777499L812.530193 259.615852c0 23.024389-18.662035 41.778522-41.593304 41.778522l-1.02433 0c-22.961968 0-41.594327-18.754133-41.594327-41.778522L728.318232 135.758963 728.318232 135.758963zM205.23071 135.758963c0-23.024389 18.632359-41.777499 41.599444-41.777499l1.048889 0c22.903639 0 41.594327 18.753109 41.594327 41.777499L289.473369 259.615852c0 23.024389-18.691711 41.778522-41.594327 41.778522l-1.048889 0c-22.967084 0-41.599444-18.754133-41.599444-41.778522L205.23071 135.758963 205.23071 135.758963zM883.278513 897.807926l-748.70198 0c-7.519254 0-13.864776-6.468318-13.864776-13.957897L120.711757 394.394489l776.433578 0 0 489.455541C897.144312 891.338584 890.797767 897.807926 883.278513 897.807926L883.278513 897.807926zM222.614635 494.083955l127.918391 0 0 62.950727L222.614635 557.034682 222.614635 494.083955 222.614635 494.083955zM445.963493 494.083955l126.906342 0 0 62.950727L445.963493 557.034682 445.963493 494.083955 445.963493 494.083955zM668.299277 494.083955l124.873032 0 0 62.950727L668.299277 557.034682 668.299277 494.083955 668.299277 494.083955zM222.614635 622.00951l127.918391 0 0 61.927421L222.614635 683.936931 222.614635 622.00951 222.614635 622.00951zM445.963493 622.00951l126.906342 0 0 61.927421L445.963493 683.936931 445.963493 622.00951 445.963493 622.00951zM668.299277 622.00951l124.873032 0 0 61.927421L668.299277 683.936931 668.299277 622.00951 668.299277 622.00951zM222.614635 746.884588l127.918391 0 0 64.97278L222.614635 811.857369 222.614635 746.884588 222.614635 746.884588zM445.963493 746.884588l126.906342 0 0 64.97278L445.963493 811.857369 445.963493 746.884588 445.963493 746.884588zM668.299277 746.884588l124.873032 0 0 64.97278L668.299277 811.857369 668.299277 746.884588 668.299277 746.884588zM668.299277 746.884588" p-id="8191" fill="#515151"></path></svg>
+	更新于 <time class="meta__text" datetime="2020-06-10T00:00:00">2020-06-10</time>
+</div>
+
+<div class="meta__item-word_count meta__item">
+	<svg t="1571149110363" class="meta__icon icon icon-wordcount" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1792" width="16" height="16"><path d="M286.722048 405.987328l0 477.058048-132.51584 0L154.206208 405.987328 286.722048 405.987328M313.22624 352.980992 127.70304 352.980992c-14.636032 0-26.503168 11.867136-26.503168 26.503168L101.199872 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.5232 0c14.636032 0 26.503168-11.867136 26.503168-26.503168L339.729408 379.483136C339.729408 364.847104 327.862272 352.980992 313.22624 352.980992L313.22624 352.980992zM577.998848 563.557376l0 319.488L445.476864 883.045376l0-319.488L577.998848 563.557376M604.502016 510.543872l-185.52832 0c-14.636032 0-26.503168 11.859968-26.503168 26.510336L392.470528 909.54752c0 14.636032 11.867136 26.503168 26.503168 26.503168l185.52832 0c14.623744 0 26.504192-11.867136 26.504192-26.503168L631.006208 537.054208c0-14.623744-11.880448-26.497024-26.504192-26.497024l0 0L604.502016 510.543872zM869.792768 140.954624l0 742.090752L737.5104 883.045376l0-742.090752L869.792768 140.954624M896.29696 87.948288 711.007232 87.948288c-14.649344 0-26.503168 11.867136-26.503168 26.503168L684.504064 909.54752c0 14.636032 11.853824 26.503168 26.503168 26.503168L896.29696 936.050688c14.636032 0 26.503168-11.867136 26.503168-26.503168l0-795.096064C922.800128 99.815424 910.932992 87.948288 896.29696 87.948288L896.29696 87.948288z" p-id="1793" fill="#515151"></path></svg>
+    约 <span class="meta__text">2587</span> 个字
+</div>
+
+<div class="meta__item-reading_time meta__item">
+	<svg t="1571149199980" class="meta__icon icon icon-time" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2748" width="16" height="16"><path d="M512 64C264.96 64 64 264.96 64 512s200.96 448 448 448 448-200.96 448-448S759.04 64 512 64zM512 895.712c-211.584 0-383.712-172.16-383.712-383.712C128.288 300.416 300.416 128.288 512 128.288c211.552 0 383.712 172.128 383.712 383.712C895.712 723.552 723.552 895.712 512 895.712z" p-id="2749" fill="#515151"></path><path d="M671.968 512 512 512 512 288.064c0-17.76-14.24-32.128-32-32.128s-32 14.4-32 32.128L448 544c0 17.76 14.272 32 32 32l191.968 0c17.76 0 32.128-14.24 32.128-32S689.728 512 671.968 512z" p-id="2750" fill="#515151"></path></svg>    
+    阅读约需 <span class="meta__text">
+        
+            6
+         m</span>
+</div>
+
+						<div class="meta__item-page_pv meta__item">
+    
+    <span class="meta__text">
+        <span id="busuanzi_container_page_pv">
+            
+        </span>
+    </span>
+</div>
+				</div>
+		</header>
+		<div class="content post__content clearfix">
+			<p>目前 Python 语言的协程从实现来说可分为两类：</p>
+<ul>
+<li>一种是基于传统生成器的协程，叫做 <strong>generator-based coroutines</strong>，通过包装 generator 对象实现。</li>
+<li>另一种在 Python 3.5 版本 <a href="https://www.python.org/dev/peps/pep-0492">PEP 492</a> 诞生，叫做 <strong>native coroutines</strong>，即通过使用 <code>async</code> 语法来声明的协程。</li>
+</ul>
+<p>本文主要介绍第二种，第一种基于生成器的协程已在 Python 3.8 中弃用，并计划在 Python 3.10 中移除。本文是「介绍」，就先不讨论太多实现原理的东西，感兴趣的童鞋可以继续关注后面的文章。</p>
+<h1 id="协程coroutine">协程(coroutine)</h1>
+<p>首先，来看一个非常简单的例子：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">import</span> asyncio
+
+async <span style="color:#719e07">def</span> <span style="color:#268bd2">c</span>():
+    await asyncio<span style="color:#719e07">.</span>sleep(<span style="color:#2aa198">1</span>)
+    <span style="color:#719e07">return</span> <span style="color:#2aa198">&#39;Done 👌&#39;</span>
+</code></pre></div><p>这个被 <code>async</code> 修饰的函数 <code>c</code> 就是一个<strong>协程函数</strong>，该函数会返回一个<strong>协程对象</strong>。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">1</span>]: asyncio<span style="color:#719e07">.</span>iscoroutinefunction(c)
+Out[<span style="color:#2aa198">1</span>]: <span style="color:#268bd2">True</span>
+
+In [<span style="color:#2aa198">2</span>]: c()
+Out[<span style="color:#2aa198">2</span>]: <span style="color:#719e07">&lt;</span>coroutine <span style="color:#b58900">object</span> c at <span style="color:#2aa198">0x107b0f748</span><span style="color:#719e07">&gt;</span>
+
+In [<span style="color:#2aa198">3</span>]: asyncio<span style="color:#719e07">.</span>iscoroutine(c())
+Out[<span style="color:#2aa198">3</span>]: <span style="color:#268bd2">True</span>
+</code></pre></div><p>一般来说，协程函数 <code>c</code> 应具有以下特点：</p>
+<ul>
+<li>一定会返回一个<strong>协程对象</strong>，而不管其中是否有 <code>await</code> 表达式。</li>
+<li>函数中不能再使用 <code>yield from</code>。</li>
+<li>函数内部可通过 <code>await</code> 表达式来挂起自身协程，并等待另一个协程完成直到返回结果。</li>
+<li><code>await</code> 表达式后面可以跟的一定是一个<strong>可等待对象</strong>，而不仅仅是协程对象。</li>
+<li>不可在 <code>async</code> 修饰的协程函数外使用 <code>await</code> 关键字，否则会引发一个 <code>SyntaxError</code>。</li>
+<li>当对协程对象进行垃圾收集时，如果从未等待过它，则会引发一个 <code>RuntimeWarning</code>（如果你刚开始写 async，那你一定遇得到，不经意间就会忘掉一个 <code>await</code>)。</li>
+</ul>
+<p>下面分别介绍下上面提到的两个概念，<strong>可等待对象</strong>和<strong>协程对象</strong>。</p>
+<h2 id="可等待对象awaitable">可等待对象(awaitable)</h2>
+<p>我们来看 <code>collections.abc</code> 模块中对 <code>Awaitable</code> 类的定义：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">Awaitable</span>(metaclass<span style="color:#719e07">=</span>ABCMeta):
+
+    __slots__ <span style="color:#719e07">=</span> ()
+
+    <span style="color:#268bd2">@abstractmethod</span>
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">__await__</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">yield</span>
+
+    <span style="color:#268bd2">@classmethod</span>
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">__subclasshook__</span>(<span style="color:#268bd2">cls</span>, C):
+        <span style="color:#719e07">if</span> <span style="color:#268bd2">cls</span> <span style="color:#719e07">is</span> Awaitable:
+            <span style="color:#719e07">return</span> _check_methods(C, <span style="color:#2aa198">&#34;__await__&#34;</span>)
+        <span style="color:#719e07">return</span> <span style="color:#268bd2">NotImplemented</span>
+</code></pre></div><p>可见，可等待对象<strong>主要实现了</strong>一个 <code>__await__</code> 方法。且该方法必须返回一个<a href="#%E6%B3%A8"><strong>迭代器(iterator)</strong></a> <sup>①</sup>，否则将会引发一个 <code>TypeError</code>。</p>
+<blockquote>
+<p>注意：<strong>主要实现</strong>是因为 <code>await</code> 表达式需要跟老的基于生成器的协程相兼容，即通过使用 <code>types.coroutine()</code> 或 <code>asyncio.coroutine()</code> 装饰器返回的生成器迭代器对象(generator iterator)也属于可等待对象，但它们并未实现 <code>__await__</code> 方法。</p>
+</blockquote>
+<h2 id="协程对象coroutine">协程对象(Coroutine)</h2>
+<p>同样的，我们来看 <code>collections.abc</code> 模块中对 <code>Coroutine</code> 类的定义：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">Coroutine</span>(Awaitable):
+
+    __slots__ <span style="color:#719e07">=</span> ()
+
+    <span style="color:#268bd2">@abstractmethod</span>
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">send</span>(<span style="color:#268bd2">self</span>, value):
+        <span style="color:#2aa198">&#34;&#34;&#34;Send a value into the coroutine.
+</span><span style="color:#2aa198">        Return next yielded value or raise StopIteration.
+</span><span style="color:#2aa198">        &#34;&#34;&#34;</span>
+        <span style="color:#719e07">raise</span> <span style="color:#cb4b16">StopIteration</span>
+
+    <span style="color:#268bd2">@abstractmethod</span>
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">throw</span>(<span style="color:#268bd2">self</span>, typ, val<span style="color:#719e07">=</span><span style="color:#268bd2">None</span>, tb<span style="color:#719e07">=</span><span style="color:#268bd2">None</span>):
+        <span style="color:#2aa198">&#34;&#34;&#34;Raise an exception in the coroutine.
+</span><span style="color:#2aa198">        Return next yielded value or raise StopIteration.
+</span><span style="color:#2aa198">        &#34;&#34;&#34;</span>
+        <span style="color:#719e07">if</span> val <span style="color:#719e07">is</span> <span style="color:#268bd2">None</span>:
+            <span style="color:#719e07">if</span> tb <span style="color:#719e07">is</span> <span style="color:#268bd2">None</span>:
+                <span style="color:#719e07">raise</span> typ
+            val <span style="color:#719e07">=</span> typ()
+        <span style="color:#719e07">if</span> tb <span style="color:#719e07">is</span> <span style="color:#719e07">not</span> <span style="color:#268bd2">None</span>:
+            val <span style="color:#719e07">=</span> val<span style="color:#719e07">.</span>with_traceback(tb)
+        <span style="color:#719e07">raise</span> val
+
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">close</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#2aa198">&#34;&#34;&#34;Raise GeneratorExit inside coroutine.
+</span><span style="color:#2aa198">        &#34;&#34;&#34;</span>
+        <span style="color:#719e07">try</span>:
+            <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>throw(<span style="color:#cb4b16">GeneratorExit</span>)
+        <span style="color:#719e07">except</span> (<span style="color:#cb4b16">GeneratorExit</span>, <span style="color:#cb4b16">StopIteration</span>):
+            <span style="color:#719e07">pass</span>
+        <span style="color:#719e07">else</span>:
+            <span style="color:#719e07">raise</span> <span style="color:#cb4b16">RuntimeError</span>(<span style="color:#2aa198">&#34;coroutine ignored GeneratorExit&#34;</span>)
+
+    <span style="color:#268bd2">@classmethod</span>
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">__subclasshook__</span>(<span style="color:#268bd2">cls</span>, C):
+        <span style="color:#719e07">if</span> <span style="color:#268bd2">cls</span> <span style="color:#719e07">is</span> Coroutine:
+            <span style="color:#719e07">return</span> _check_methods(C, <span style="color:#2aa198">&#39;__await__&#39;</span>, <span style="color:#2aa198">&#39;send&#39;</span>, <span style="color:#2aa198">&#39;throw&#39;</span>, <span style="color:#2aa198">&#39;close&#39;</span>)
+        <span style="color:#719e07">return</span> <span style="color:#268bd2">NotImplemented</span>
+</code></pre></div><p>由上可知，由于继承关系，<strong>协程对象是属于可等待对象的</strong>。</p>
+<p>除了协程 <code>Coroutine</code> 对象外，目前常见的可等待对象还有两种：<code>asyncio.Task</code> 和 <code>asyncio.Future</code>，下文中介绍。</p>
+<p>协程的执行可通过调用 <code>__await__()</code> 并迭代其结果进行控制。当协程结束执行并返回时，迭代器会引发 <code>StopIteration</code> 异常，并通过该异常的 <code>value</code> 属性来传播协程的返回值。下面看一个简单的例子：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">4</span>]: c()<span style="color:#719e07">.</span>send(<span style="color:#268bd2">None</span>)
+Out[<span style="color:#2aa198">4</span>]: <span style="color:#719e07">&lt;</span>Future pending<span style="color:#719e07">&gt;</span>
+
+In [<span style="color:#2aa198">5</span>]: async <span style="color:#719e07">def</span> <span style="color:#268bd2">c1</span>():
+   <span style="color:#719e07">...</span>:     <span style="color:#719e07">return</span> <span style="color:#2aa198">&#34;Done 👌&#34;</span>
+   <span style="color:#719e07">...</span>:
+In [<span style="color:#2aa198">6</span>]: c1()<span style="color:#719e07">.</span>send(<span style="color:#268bd2">None</span>)
+Out[<span style="color:#2aa198">6</span>]: <span style="color:#cb4b16">StopIteration</span>: Done 👌
+</code></pre></div><h1 id="运行">运行</h1>
+<p>协程的运行需要在一个 EventLoop 中进行，由它来控制异步任务的注册、执行、取消等。其大致原理是：</p>
+<blockquote>
+<p>把传入的所有异步对象(准确的说是可等待对象，如 <code>Coroutine</code>，<code>Task</code> 等，见下文)都注册到这个 EventLoop 上，EventLoop 会循环执行这些异步对象，但同时只执行一个，当执行到某个对象时，如果它正在等待其他对象（I/O 处理） 返回，事件循环会暂停它的执行去执行其他的对象。当某个对象完成 I/O 处理后，下次循环到它的时候会获取其返回值然后继续向下执行。这样以来，所有的异步任务就可以协同运行。</p>
+</blockquote>
+<p>EventLoop 接受的对象必须为可等待对象，目前主要有三种类型即 <code>Coroutine</code>, <code>Task</code> 和 <code>Future。</code></p>
+<p>下面简单的介绍下 <code>Task</code> 和 <code>Future</code>：</p>
+<ul>
+<li>
+<p><code>Future</code> 是一种特殊的低级的可等待对象，用来支持底层回调式代码与高层 <code>async/await</code> 式的代码交互，是对协程底层实现的封装，其表示一个异步操作的最终结果。它提供了设置和获取 <code>Future</code> 执行状态或结果等操作的接口。<code>Future</code> 实现了 <code>__await__</code> 协议，并通过 <code>__iter__ = __await__</code> 来兼容老式协程。一般来说，我们不需要关心这玩意儿，日常的开发也是不需要要用到它的。如有需要，就用其子类 Task。</p>
+</li>
+<li>
+<p>Task 用来协同的调度协程以实现并发，并提供了相应的接口供我们使用。</p>
+</li>
+</ul>
+<p>创建一个 <code>Task</code> 非常简单：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">6</span>]: loop <span style="color:#719e07">=</span> asyncio<span style="color:#719e07">.</span>get_event_loop()
+In [<span style="color:#2aa198">7</span>]: task <span style="color:#719e07">=</span> loop<span style="color:#719e07">.</span>create_task(c())
+
+In [<span style="color:#2aa198">8</span>]: task
+Out[<span style="color:#2aa198">8</span>]: <span style="color:#719e07">&lt;</span>Task pending coro<span style="color:#719e07">=&lt;</span>c() running at <span style="color:#719e07">&lt;</span>ipython<span style="color:#719e07">-</span><span style="color:#b58900">input</span><span style="color:#719e07">-</span><span style="color:#2aa198">1</span><span style="color:#719e07">-</span><span style="color:#2aa198">3</span>afd2bbb1944<span style="color:#719e07">&gt;</span>:<span style="color:#2aa198">3</span><span style="color:#719e07">&gt;&gt;</span>
+
+In [<span style="color:#2aa198">9</span>]: task<span style="color:#719e07">.</span>done()
+Out[<span style="color:#2aa198">9</span>]: <span style="color:#268bd2">False</span>
+
+In [<span style="color:#2aa198">10</span>]: task<span style="color:#719e07">.</span>cancelled()
+Out[<span style="color:#2aa198">10</span>]: <span style="color:#268bd2">False</span>
+
+In [<span style="color:#2aa198">11</span>]: task<span style="color:#719e07">.</span>result()
+Out[<span style="color:#2aa198">11</span>]: InvalidStateError: Result <span style="color:#719e07">is</span> <span style="color:#719e07">not</span> <span style="color:#b58900">set</span><span style="color:#719e07">.</span>
+
+In [<span style="color:#2aa198">12</span>]: await task
+Out[<span style="color:#2aa198">12</span>]: <span style="color:#2aa198">&#39;Done 👌&#39;</span>
+
+In [<span style="color:#2aa198">13</span>]: task
+Out[<span style="color:#2aa198">13</span>]: <span style="color:#719e07">&lt;</span>Task finished coro<span style="color:#719e07">=&lt;</span>c() done, defined at <span style="color:#719e07">&lt;</span>ipython<span style="color:#719e07">-</span><span style="color:#b58900">input</span><span style="color:#719e07">-</span><span style="color:#2aa198">1</span><span style="color:#719e07">-</span><span style="color:#2aa198">3</span>afd2bbb1944<span style="color:#719e07">&gt;</span>:<span style="color:#2aa198">3</span><span style="color:#719e07">&gt;</span> result<span style="color:#719e07">=</span><span style="color:#2aa198">&#39;Done 👌&#39;</span><span style="color:#719e07">&gt;</span>
+In [<span style="color:#2aa198">14</span>]: task<span style="color:#719e07">.</span>done()
+Out[<span style="color:#2aa198">14</span>]: <span style="color:#268bd2">True</span>
+In [<span style="color:#2aa198">15</span>]: task<span style="color:#719e07">.</span>result()
+Out[<span style="color:#2aa198">15</span>]: <span style="color:#2aa198">&#39;Done 👌&#39;</span>
+
+In [<span style="color:#2aa198">16</span>]: task <span style="color:#719e07">=</span> loop<span style="color:#719e07">.</span>create_task(c())
+In [<span style="color:#2aa198">17</span>]: task<span style="color:#719e07">.</span>cancel()
+Out[<span style="color:#2aa198">17</span>]: <span style="color:#268bd2">True</span>
+In [<span style="color:#2aa198">18</span>]: await task
+Out[<span style="color:#2aa198">18</span>]: CancelledError:
+</code></pre></div><p>上面说到，协程的运行需要在一个 EventLoop 中进行，在 Python 3.7 之前，你只能这么写 😔 :</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">19</span>]: loop <span style="color:#719e07">=</span> asyncio<span style="color:#719e07">.</span>get_event_loop()
+In [<span style="color:#2aa198">20</span>]: loop<span style="color:#719e07">.</span>run_until_complete(c())
+Out[<span style="color:#2aa198">20</span>]: <span style="color:#2aa198">&#39;Done 👌&#39;</span>
+In [<span style="color:#2aa198">21</span>]: loop<span style="color:#719e07">.</span>close()
+</code></pre></div><p>Python 3.7 及以上版本可以直接使用 <code>asyncio.run()</code> 👏 :</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">22</span>]: asyncio<span style="color:#719e07">.</span>run(c())
+Out[<span style="color:#2aa198">22</span>]: <span style="color:#2aa198">&#39;Done 👌&#39;</span>
+</code></pre></div><h2 id="并发">并发</h2>
+<p>有些童鞋可能有疑问了，我写好了一个个协程函数，怎样才能并发的运行 🤔 ？</p>
+<p><code>asyncio</code> 提供了相应的两个接口：<code>asyncio.gather</code> 和 <code>asyncio.wait</code> 来支持:</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">async <span style="color:#719e07">def</span> <span style="color:#268bd2">c1</span>():
+    await asyncio<span style="color:#719e07">.</span>sleep(<span style="color:#2aa198">1</span>)
+    <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#39;c1 done&#39;</span>)
+    <span style="color:#719e07">return</span> <span style="color:#268bd2">True</span>
+
+async <span style="color:#719e07">def</span> <span style="color:#268bd2">c2</span>():
+    await asyncio<span style="color:#719e07">.</span>sleep(<span style="color:#2aa198">2</span>)
+    <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#39;c2 done&#39;</span>)
+    <span style="color:#719e07">return</span> <span style="color:#268bd2">True</span>
+
+async <span style="color:#719e07">def</span> <span style="color:#268bd2">c12_by_gather</span>():
+    await asyncio<span style="color:#719e07">.</span>gather(c1(), c2())
+
+async <span style="color:#719e07">def</span> <span style="color:#268bd2">c12_by_awit</span>():
+    await asyncio<span style="color:#719e07">.</span>wait([c1(), c2()])
+</code></pre></div><div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">23</span>]: asyncio<span style="color:#719e07">.</span>run(c12_by_gather())
+c1 done
+c2 done
+
+In [<span style="color:#2aa198">24</span>]: asyncio<span style="color:#719e07">.</span>run(c12_by_awit())
+c1 done
+c2 done
+</code></pre></div><h1 id="其它">其它</h1>
+<p>上面我们介绍了 <a href="https://www.python.org/dev/peps/pep-0492/">PEP 492</a> coroutine 的基础使用，同时 <a href="https://www.python.org/dev/peps/pep-0492/">PEP 492</a> 也相应提出了基于 <code>async with</code> 和 <code>async for</code> 表达式的异步上下文管理器(asynchronous context manager)和异步迭代器(asynchronous iterator)。</p>
+<p><u>下面的介绍的示例将基于 <a href="/posts/iter">Python 可迭代对象, 迭代器和生成器</a> 里的示例展开，建议感兴趣的同学可以先看下这篇文章。</u></p>
+<h2 id="异步上下文管理器">异步上下文管理器</h2>
+<p>在 Python 中，我们常会通过实现 <code>__enter__()</code> 和 <code>__exit__()</code> 方法来实现一个上下文管理器：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">1</span>]: <span style="color:#719e07">class</span> <span style="color:#268bd2">ContextManager</span>:
+   <span style="color:#719e07">...</span>:
+   <span style="color:#719e07">...</span>:     <span style="color:#719e07">def</span> __enter__(<span style="color:#268bd2">self</span>):
+   <span style="color:#719e07">...</span>:         <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#39;enter...&#39;</span>)
+   <span style="color:#719e07">...</span>:
+   <span style="color:#719e07">...</span>:     <span style="color:#719e07">def</span> __exit__(slef, exc_type, exc_val, exc_tb):
+   <span style="color:#719e07">...</span>:         <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#39;exit...&#39;</span>)
+   <span style="color:#719e07">...</span>:
+
+In [<span style="color:#2aa198">2</span>]: <span style="color:#719e07">with</span> ContextManager():
+   <span style="color:#719e07">...</span>:     <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#39;Do something...&#39;</span>)
+   <span style="color:#719e07">...</span>:
+enter<span style="color:#719e07">...</span>
+Do something<span style="color:#719e07">...</span>
+<span style="color:#b58900">exit</span><span style="color:#719e07">...</span>
+</code></pre></div><p>同样的，在异步编程时我们可以通过实现 <code>__aenter__()</code> 和 <code>__aexit__()</code> 方法来实现一个上下文管理器，并通过 <code>async with</code> 表达式来使用。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">1</span>]: <span style="color:#719e07">class</span> <span style="color:#268bd2">AsyncContextManager</span>:
+   <span style="color:#719e07">...</span>:
+   <span style="color:#719e07">...</span>:     async <span style="color:#719e07">def</span> <span style="color:#268bd2">__aenter__</span>(<span style="color:#268bd2">self</span>):
+   <span style="color:#719e07">...</span>:         <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#39;async enter...&#39;</span>)
+   <span style="color:#719e07">...</span>:
+   <span style="color:#719e07">...</span>:     async <span style="color:#719e07">def</span> <span style="color:#268bd2">__aexit__</span>(slef, exc_type, exc_val, exc_tb):
+   <span style="color:#719e07">...</span>:         <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#39;async exit...&#39;</span>)
+   <span style="color:#719e07">...</span>:
+
+In [<span style="color:#2aa198">2</span>]: async <span style="color:#719e07">with</span> AsyncContextManager():
+   <span style="color:#719e07">...</span>:     <span style="color:#719e07">print</span>(<span style="color:#2aa198">&#39;Do something...&#39;</span>)
+   <span style="color:#719e07">...</span>:
+async enter<span style="color:#719e07">...</span>
+Do something<span style="color:#719e07">...</span>
+async <span style="color:#b58900">exit</span><span style="color:#719e07">...</span>
+</code></pre></div><h2 id="异步迭代">异步迭代</h2>
+<p>在之前的文章 <a href="/posts/iter">Python 可迭代对象, 迭代器和生成器</a> 中，我们介绍了通过实现 <code>__iter__()</code> 方法来实现一个可迭代对象，通过实现迭代器协议 <code>__iter__()</code> 和 <code>__next__()</code> 方法来实现一个迭代器对象。下面我们改造下之前的例子，实现一个异步的版本。</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">AsyncLinkFinder</span>:
+
+    PATTERN <span style="color:#719e07">=</span> <span style="color:#2aa198">&#34;(?&lt;=href=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">)|(?&lt;=href=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">)&#34;</span>
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, text):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links <span style="color:#719e07">=</span> re<span style="color:#719e07">.</span>findall(<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>PATTERN, text)
+
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">__aiter__</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">return</span> AsyncLinkIiterator(<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links)
+
+<span style="color:#719e07">class</span> <span style="color:#268bd2">AsyncLinkIiterator</span>:
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, links):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links <span style="color:#719e07">=</span> links
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>index <span style="color:#719e07">=</span> <span style="color:#2aa198">0</span>
+
+    async <span style="color:#719e07">def</span> <span style="color:#268bd2">_gen_link</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">try</span>:
+            link <span style="color:#719e07">=</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links[<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>index]
+            <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>index <span style="color:#719e07">+=</span> <span style="color:#2aa198">1</span>
+        <span style="color:#719e07">except</span> <span style="color:#cb4b16">IndexError</span>:
+            link <span style="color:#719e07">=</span> <span style="color:#268bd2">None</span>
+        <span style="color:#719e07">return</span> link
+
+    <span style="color:#719e07">def</span> <span style="color:#268bd2">__aiter__</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">return</span> <span style="color:#268bd2">self</span>
+
+    async <span style="color:#719e07">def</span> <span style="color:#268bd2">__anext__</span>(<span style="color:#268bd2">self</span>):
+        link <span style="color:#719e07">=</span> await <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>_gen_link()
+        <span style="color:#719e07">if</span> link <span style="color:#719e07">is</span> <span style="color:#268bd2">None</span>:
+            <span style="color:#719e07">raise</span> StopAsyncIteration
+        <span style="color:#719e07">return</span> link
+</code></pre></div><div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">In [<span style="color:#2aa198">7</span>]: async <span style="color:#719e07">for</span> s <span style="color:#719e07">in</span> AsyncLinkFinder(TEXT):
+    <span style="color:#719e07">...</span>:     <span style="color:#719e07">print</span>(s)
+https:<span style="color:#719e07">//</span>blog<span style="color:#719e07">.</span>python<span style="color:#719e07">.</span>org
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNew<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>T3r7qZxo<span style="color:#719e07">-</span>xg<span style="color:#719e07">/</span>python<span style="color:#719e07">-</span>software<span style="color:#719e07">-</span>foundation<span style="color:#719e07">-</span>fellow<span style="color:#719e07">.</span>html
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNews<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>lE0u<span style="color:#719e07">-</span><span style="color:#2aa198">5</span>MIUQc<span style="color:#719e07">/</span>why<span style="color:#719e07">-</span>sponsor<span style="color:#719e07">-</span>pycon<span style="color:#719e07">-</span><span style="color:#2aa198">2020.</span>html
+http:<span style="color:#719e07">//</span>feedproxy<span style="color:#719e07">.</span>google<span style="color:#719e07">.</span>com<span style="color:#719e07">/~</span>r<span style="color:#719e07">/</span>PythonSoftwareFoundationNews<span style="color:#719e07">/~</span><span style="color:#2aa198">3</span><span style="color:#719e07">/</span>jAMRqiPhWSs<span style="color:#719e07">/</span>seeking<span style="color:#719e07">-</span>developers<span style="color:#719e07">-</span><span style="color:#719e07">for</span><span style="color:#719e07">-</span>paid<span style="color:#719e07">-</span>contract<span style="color:#719e07">.</span>html
+</code></pre></div><p>例子中实现了 <code>__aiter__()</code> 方法的 <code>AsyncLinkFinder</code> 就是一个<strong>异步可迭代对象</strong>，<code>__aiter__()</code> 方法返回的必须是一个<strong>异步迭代器</strong>，如 <code>AsyncLinkIiterator</code>。异步迭代器必须同时实现 <code>__aiter__()</code> 和 <code>__anext__()</code> 方法。一个不同的点是，异步迭代中，当迭代器耗尽时，需要引发一个 <code>StopAsyncIteration</code> 而不是 <code>StopIteration</code>。</p>
+<p>同样的，我们也实现一个异步生成器版本的：</p>
+<div class="highlight"><pre style="color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#719e07">class</span> <span style="color:#268bd2">LinkFinder</span>:
+
+    PATTERN <span style="color:#719e07">=</span> <span style="color:#2aa198">&#34;(?&lt;=href=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#34;</span><span style="color:#2aa198">)|(?&lt;=href=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">).+?(?=</span><span style="color:#cb4b16">\&#39;</span><span style="color:#2aa198">)&#34;</span>
+
+    <span style="color:#719e07">def</span> __init__(<span style="color:#268bd2">self</span>, text):
+        <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links <span style="color:#719e07">=</span> re<span style="color:#719e07">.</span>finditer(<span style="color:#268bd2">self</span><span style="color:#719e07">.</span>PATTERN, text)
+
+    async <span style="color:#719e07">def</span> <span style="color:#268bd2">__aiter__</span>(<span style="color:#268bd2">self</span>):
+        <span style="color:#719e07">return</span> (link<span style="color:#719e07">.</span>group() <span style="color:#719e07">for</span> link <span style="color:#719e07">in</span> <span style="color:#268bd2">self</span><span style="color:#719e07">.</span>links)
+</code></pre></div><h1 id="注">注</h1>
+<ul>
+<li>① 关于迭代器的介绍可阅读 <a href="/posts/iter/">Python 可迭代对象, 迭代器和生成器</a>。<br></li>
+<li>② 关于示例中 __slots__ 的介绍请查看 <a href="/posts/py-slots/">理解 Python 类属性之 __slots__</a>。</li>
+</ul>
+<h1 id="参考">参考</h1>
+<ul>
+<li><a href="https://www.python.org/dev/peps/pep-0492/">PEP 492: Coroutines with async and await syntax</a></li>
+<li><a href="https://www.python.org/dev/peps/pep-0342/">PEP 342: Coroutines via Enhanced Generators</a></li>
+</ul>
+<!-- https://zhuanlan.zhihu.com/p/72887901 -->
+
+		</div>
+		<br>
+		
+		
+		<hr>
+			<footer class="post__footer">
+				
+<div class="post__tags tags clearfix">
+	<svg class="tags__badge icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/asyncio/" rel="tag">asyncio</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/%E5%8D%8F%E7%A8%8B/" rel="tag">协程</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/%E5%9F%BA%E7%A1%80%E5%8E%9F%E7%90%86/" rel="tag">基础原理</a></li>
+	</ul>
+</div>
+			</footer>
+		
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<a href="/about">
+			<img alt="关于 feileo avatar" src="https://cdn.at7h.com/img/avatar.jpg" class="avatar" height="90"
+				width="90">
+		</a>
+	</figure>
+	<div class="authorbox__header">
+		<a href="/about">
+			<span class="authorbox__name">关于 feileo</span>
+		</a>
+	</div>
+	<div class="authorbox__description">
+		You may say I&#39;m a dreamer, but I&#39;m not the only one.
+	</div>
+	<div class="authorbox__description_sub">
+		--John Winston Lennon 《Imagine》
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/posts/sentry-install/" rel="prev"><span class="post-nav__caption">«&thinsp;上一篇</span><p class="post-nav__post-title">Sentry 服务的搭建和使用</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/posts/py-syspath/" rel="next"><span class="post-nav__caption">下一篇&thinsp;»</span><p class="post-nav__post-title">闲侃 sys.path 与 buildout 实践</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+    <div id="utter-container"></div>
+    <script src="https://utteranc.es/client.js"
+        repo= 'feileo/feileo.github.io'
+        issue-term= "pathname"
+        theme= 'github-light'
+        crossorigin= "anonymous",
+        label='✨💬✨'
+        async>
+	</script> 
+</section>
+
+
+
+			</div>
+			
+		</div>
+		<footer class="footer">
+	<div>
+		
+		<div class="footer__copyright">
+			<div class="footer__text">
+				<p>本博客基于 <a href="https://golang.google.cn/" target="_blank"> Golang </a> + <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> +  <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> 构建</p>
+        <p>本站由 <a href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral" target="_blank"><img width="50" src="https://cdn.at7h.com/img/upyun_logo.png"></a> 提供 CDN 加速/静态资源存储服务</p>
+				<p>由 <a href="https://utteranc.es/" target="_blank"><img width="19" src="https://cdn.at7h.com/img/utteranc.png"> utterances</a> 提供评论系统</p>
+				<p>
+					<span id="busuanzi_container_site_pv">
+						本站运行自 2020-10-01,
+						累计 PV
+						1<span id="busuanzi_value_site_pv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>,
+					<span id="busuanzi_container_site_uv">
+						UV <span id="busuanzi_value_site_uv"><img width="16" src="https://cdn.at7h.com/img/spinner.png" /></span>
+					</span>
+				</p>
+		<p>
+			<a target="_blank" href="/sitemap.xml">站点地图</a> &nbsp;·&nbsp; 
+			<a target="_blank" href="/index.xml" type="application/rss+xml" title="rss"> RSS 
+			</a>
+		</p>
+        <p>版权所有 &copy; 2021 at7h.com</p>
+        
+
+			</div>
+		</div>
+		<div class="footer__text__sub">
+			<a target="_blank" href="http://beian.miit.gov.cn">京 ICP 备 2020037066 号 - 1</a>
+			<br>
+			<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=61092802000118">
+				<img style="vertical-align: text-bottom;" width="18" src="https://cdn.at7h.com/img/beian.png">
+				陕公网安备 61092802000118 号
+      </a>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>奇技淫巧 on feileo</title>
+    <link>https://at7h.com/tags/%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7/</link>
+    <description>Recent content in 奇技淫巧 on feileo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Wed, 25 Mar 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://at7h.com/tags/%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Chrome 网页截图小技巧</title>
+      <link>https://at7h.com/posts/screenshot/</link>
+      <pubDate>Wed, 25 Mar 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/screenshot/</guid>
+      <description>很多时候，我们都有网页截图的需求，而通常我们都会使用系统截图工具，或是通过 QQ、微信等第三方软件的截图功能来完成。而有时候，需要截取整个网页，对于那些有滚动条的页面来说，上述的截图工具只能截取当前屏幕显示的页面，并不能满足需求。这个时候你可能想借助一些工具插件来完成，但其实 Chrome 开发者工具中已经自带了截图命令，个人觉得效果也令人满意。 所以，下面就来介绍下 Chrome 开发者工具截图命令的使用(mac)： 提示：在此之前，请确保 Chrome 已升级至 59 或更高版本 1. 打开开发者工具：在你想要截图的网页上，按下 F12 或 ⌘Command + ⌥Option + j，也或者右键然后选择「检查」，打开开发者工具。 2. 输入截图命令：随后，按 ⌘Command + ⇧Shift + P 调出命令输入框，然后输入 Capture full size screenshot（只输前几个字母就能找到），找到对应后项然后回车即可。 除了整个网页长截图以外，如果你想准确截取网页的某一部分，没问题！按 ⌘Command + ⇧Shift + C 嗅探元素（即上图中红色框中的那个小箭头），选中想要的部分后，再运行刚才的命令，就可以了。 最后，你还可以进入移动设备模拟的模式下获取手机或者平板的截图，按 ⌘Command + ⇧Shift + M(即上图中红色框中的那个手机的标识)，然后运行刚才的命令就可以啦，在顶部的工具栏中，你还可以选择要模拟的设备和分辨率等。</description>
+    </item>
+    
+  </channel>
+</rss>

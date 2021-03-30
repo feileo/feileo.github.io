@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>sentry on feileo</title>
+    <link>https://at7h.com/tags/sentry/</link>
+    <description>Recent content in sentry on feileo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Wed, 03 Jun 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://at7h.com/tags/sentry/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Sentry 服务的搭建和使用</title>
+      <link>https://at7h.com/posts/sentry-install/</link>
+      <pubDate>Wed, 03 Jun 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/sentry-install/</guid>
+      <description>Sentry 是一个开源的非常强大的实时异常收集系统，可以为开发者的提供帮助、诊断，修复和优化其代码的性能的能力，可以用它来监控线上服务的健康状态，实时收集的异常堆栈信息可以帮助我们快速发现、定位和修复问题。支持 Web 前后端、移动应用以及游戏，90 余种主流语言和相关框架，同时还提供了非常友好的管理页面，错误告警、指派、统计等其他丰富的功能。更多介绍可以查看官方文档。 Sentry 提供了商用的服务，可以直接在官网购买。同时也提供了开源版本，可以自行搭建安装。最近刚好为组里的几个服务搭建和引入 Sentry，就记录下来与大家分享。 Sentry 提供了两种安装方式：docker 和 Python 包。 我这里推荐搭建使用第一种方式，比较简便，否则你需要自行安装和启动 PostgreSQL、Redis、Kafka 等一系列服务和创建表等操作。 本文主要介绍使用 docker 的方式进行安装， 部署 Sentry 环境准备 1. 安装 docker $ curl -sSL https://get.daocloud.io/docker | sh 如果已经安装了其他历史版本，请在安装前先卸载。 2. 安装 docker-compose $ sudo curl -L &amp;quot;https://github.com/docker/compose/releases/download/1.27.1/docker-compose-$(uname -s)-$(uname -m)&amp;quot; -o /usr/local/bin/docker-compose $ sudo chmod +x /usr/local/bin/docker-compose 查看是否安装成功： $ docker -v Docker version 19.03.1, build 74b1e89 $ docker-compose -v docker-compose version 1.27.1, build 1110ad01 安装 Sentry 1. 获取 onpremise $ git clone https://github.com/getsentry/onpremise.git 2. 执行安装脚本 进入 onpremise 目录执行脚本： $ cd onpremise $ ./install.sh 这个过程稍微有点慢，安装过程中会提示你创建管理者（admin/owner）的账号和密码，请注意留意，按照提示输入即可。 3. 设置邮件等配置 这一步骤是非必须的，启动时会有一个配置的页面，到时候再根据提示填写也是可以的 配置文件为 sentry/config.yml，需要设置邮件、域名等，具体配置可以参见官方文档。 启动服务 安装完成后启动服务: $ docker-compose up -d 然后访问 http://localhost:9000，使用刚刚创建的管理员账号登录。 登录之后会有一个设置页面输入必需的配置，需要你输入一些必需的配置，如 Root URL、 SMTP 服务器等，具体配置参数的意思可以参见官方文档。 如果你在上面的第 3 步已经在 sentry/config.yml 中配置了相关的参数，这里就没有相应的选项了。比如你已经配置了 system.url-prefix（部署服务的域名） 那么这里就没有第一项 Root URL 输入项了。 测试/修改配置 为保证邮箱（SMTP 服务器）配置正确，最好测试一下，进入 admin -&amp;gt; Mail 发送一封测试邮件看看: 测试 SMTP 配置 -- 如果你想更改配置，上图目录视图下点击 Settings 修改即可，修改完成后别忘记重启哦: $ docker-compose down &amp;amp;&amp;amp; docker-compose up -d 接入 Sentry 安装并部署好 sentry 服务后，就可以为你的服务创建一个 project，选择你的语言或者框架: 接着在你的服务项目中接入 sentry 即可: 具体语言或框架的接入文档参见官方接入文档。 问题 1. 正常情况下安装过程中是会出现输入管理员账号密码的步骤的，如果没有创建 admin 账户，可以执行： $ docker-compose run --rm web createuser 具体可以查阅这个 issue。 暂时没遇到其他问题，如果您遇到了欢迎留言，一起探讨，再补充。</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>mac on feileo</title>
+    <link>https://at7h.com/tags/mac/</link>
+    <description>Recent content in mac on feileo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Mon, 11 May 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://at7h.com/tags/mac/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>在 tmux 环境中使用 tmux-256color</title>
+      <link>https://at7h.com/posts/install-tmux256-formac/</link>
+      <pubDate>Mon, 11 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/install-tmux256-formac/</guid>
+      <description>在 macOS 中，我们 iTerm2 中的 terminal color 一般都设置为 xterm-256color，这没毛病，但问题是它不能在 tmux 环境中使用: $TERM should be &amp;quot;screen-256color&amp;quot; or &amp;quot;tmux-256color&amp;quot; in tmux. Colors might look wrong. 为此，我们可以在 zshrc 中加上这样一段配置： if [[ $TMUX != &amp;#34;&amp;#34; ]] then export TERM=&amp;#34;tmux-256color&amp;#34; else export TERM=&amp;#34;xterm-256color&amp;#34; fi 而在 tmux 环境中一般默认使用系统自带的 screen-256color，这在大多数情况是够用的，但是它不支持任何斜体字体样式，所以在 Vim 中类似代码高亮这种就会很有问题。 为此，我们可以在 tmux.conf 中加上设置： set -g default-terminal &amp;#34;tmux-256color&amp;#34; set-option -a terminal-overrides &amp;#34;,*256col*:RGB&amp;#34; 新建一个 session 测试一下： tnew test # tmux new -s test 发现报错: can&#39;t find terminal definition for tmux-256color。 原因是系统默认是没有 tmux-256color 的，需要我们手动安装，加上相应的 terminfo 就可以了。 tmux-256color 详细安装教程：Installing tmux-256color for macOS 感兴趣的同学可以参考我的配置，欢迎大家评论留言，与我交流。</description>
+    </item>
+    
+    <item>
+      <title>Mac 神器 Karabiner-Elements 推荐</title>
+      <link>https://at7h.com/posts/karabiner/</link>
+      <pubDate>Wed, 06 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://at7h.com/posts/karabiner/</guid>
+      <description>今天给大家推荐一款 Mac 下的键盘键位定制化神器 Karabiner-Elements，你可以用它来尽情随意的修改你的键位设置。 对于程序员来说，键盘 ⌨️ 可谓是最亲近的东西了，毕竟每天摸的最多的就是它 🌝，很多同学都会尝试根据自己的使用习惯来更改键位，以提高输入体验。 我个人比较喜欢小键盘，之前使用 poker2 时就通过 Mac 系统自带的「修饰键更改」功能将大写锁定键改成了 Control，因为大写锁定键几乎没什么用，反而占据了一个绝好的位置。 近期入手了 hhkb，唯一美中不足的是它的方向键有点鸡肋，虽然我是 vim 用户，对方向键的依赖比较小一些，但还是感觉不太方便。一通搜索，发现了一款 Mac 下的键位定制化神器 Karabiner-Elements。将方向键改为 command+hjkl，就直接起飞 😎。 你可以根据需要更换任何键位: 提示： 如果你不清楚你要修改的键叫什么名字，可以使用它自带的 Karabiner-EventViewer 来查看。 如下图，你也可以添加别人配置好的 Rule Mode，点击 『Add rule』即可选择： 没有想要的？试试 『Import more &amp;hellip;』吧： 现在很多键盘都会有一些内置一些键位更改的选项，如 poker，hhkb 等，但支持很有限。如果你想自定义键位，那么 Karabiner-Elements 可以满足你的任何需求。 关于下载安装和使用，请查看官方文档。</description>
+    </item>
+    
+  </channel>
+</rss>
